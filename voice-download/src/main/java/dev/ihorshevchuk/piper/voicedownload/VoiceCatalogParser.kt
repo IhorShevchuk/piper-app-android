@@ -54,7 +54,7 @@ object VoiceCatalogParser {
             val path = fileKeys.next()
             val meta = files.optJSONObject(path) ?: continue
             val size = meta.optLong("size_bytes", 0)
-            val md5 = meta.optString("md5_digest", null)?.takeIf { it.isNotEmpty() }
+            val md5 = meta.optString("md5_digest").takeIf { it.isNotEmpty() }
             when {
                 path.endsWith(".onnx.json") -> {
                     configPath = path; configSize = size; configMd5 = md5
