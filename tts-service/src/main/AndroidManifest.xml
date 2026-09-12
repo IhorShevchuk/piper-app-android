@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!-- System TTS engine: backed by the native piper1-gpl core. -->
+        <service
+            android:name="dev.ihorshevchuk.piper.tts.PiperTtsService"
+            android:exported="true"
+            android:label="@string/tts_service_label"
+            android:permission="android.permission.BIND_TEXT_TO_SPEECH_SERVICE">
+            <intent-filter>
+                <action android:name="android.intent.action.TTS_SERVICE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.speech.tts"
+                android:resource="@xml/tts_engine" />
+        </service>
+
+        <!-- Settings entry (gear icon in system TTS settings). -->
+        <activity
+            android:name="dev.ihorshevchuk.piper.tts.TtsSettingsActivity"
+            android:exported="true"
+            android:label="@string/tts_settings_title" />
+
+        <!-- CHECK_TTS_DATA: lets Android verify voice data availability. -->
+        <activity
+            android:name="dev.ihorshevchuk.piper.tts.CheckVoiceData"
+            android:exported="true"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="android.speech.tts.engine.CHECK_TTS_DATA" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- INSTALL_TTS_DATA: redirects to engine settings. -->
+        <activity
+            android:name="dev.ihorshevchuk.piper.tts.InstallVoiceData"
+            android:exported="true"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="android.speech.tts.engine.INSTALL_TTS_DATA" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- GET_SAMPLE_TEXT: "Listen to an example" in TTS settings. -->
+        <activity
+            android:name="dev.ihorshevchuk.piper.tts.GetSampleText"
+            android:exported="true"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="android.speech.tts.engine.GET_SAMPLE_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tts_service_label">Piper</string>
+    <string name="tts_settings_title">Piper TTS settings</string>
+    <!-- %1$d = installed voice count, %2$s = active voice name -->
+    <string name="tts_settings_status">Installed voices: %1$d\nActive voice: %2$s</string>
+    <string name="tts_settings_no_active_voice">none</string>
+    <string name="tts_settings_voice_manager_hint">Browse the voice catalog, download and delete voices, and preview them before use.</string>
+    <string name="tts_settings_manage_voices">Manage voices</string>
+    <string name="tts_sample_text">Hello. This is an example of Piper text to speech.</string>
+</resources>

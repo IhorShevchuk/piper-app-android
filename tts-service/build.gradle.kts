@@ -1,18 +1,14 @@
 plugins {
-    id("com.android.application")
+    id("com.android.library")
     kotlin("android")
 }
 
 android {
-    namespace = "dev.ihorshevchuk.piper.app"
+    namespace = "dev.ihorshevchuk.piper.tts"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "dev.ihorshevchuk.piper.app"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
     }
 
     compileOptions {
@@ -31,13 +27,10 @@ android {
 }
 
 dependencies {
-    // System TTS service module (this repo).
-    implementation(project(":tts-service"))
-    // Voice catalog + download manager + voice list UI (this repo).
-    implementation(project(":voice-download"))
-    // Resolved to the sibling piper-android repo via the composite build
-    // in settings.gradle.kts (no publishing step needed).
+    // Module coordinates are substituted to the sibling piper-android repo's
+    // Gradle projects by the composite build in settings.gradle.kts.
     implementation("dev.ihorshevchuk.piper:piper-engine")
     implementation("dev.ihorshevchuk.piper:piper-utils")
     implementation("dev.ihorshevchuk.piper:piper-player")
+    testImplementation("junit:junit:4.13.2")
 }

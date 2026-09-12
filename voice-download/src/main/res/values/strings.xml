@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="voice_list_title">Piper voices</string>
+    <!-- %1$d = voice count, %2$d = language count, %3$d = installed count -->
+    <string name="voice_list_status">%1$d voices • %2$d languages • %3$d installed</string>
+    <string name="voice_list_loading_catalog">Loading voice catalog…</string>
+    <!-- %1$s = error message -->
+    <string name="voice_list_catalog_error">Couldn\'t load the voice catalog: %1$s</string>
+    <string name="voice_list_empty">No voices match.</string>
+    <string name="voice_search_hint">Search voices</string>
+
+    <string name="voice_filter_all">All</string>
+    <string name="voice_filter_installed">Installed</string>
+    <string name="voice_filter_available">Available</string>
+
+    <string name="voice_action_download">Download</string>
+    <string name="voice_action_cancel">Cancel</string>
+    <string name="voice_action_retry">Retry</string>
+    <string name="voice_action_delete">Delete</string>
+    <string name="voice_action_preview">Preview</string>
+    <string name="voice_action_set_active">Set active</string>
+    <string name="voice_badge_active">Active</string>
+
+    <!-- %1$s = voice name; used as button content descriptions -->
+    <string name="voice_cd_download">Download %1$s</string>
+    <string name="voice_cd_cancel">Cancel download of %1$s</string>
+    <string name="voice_cd_retry">Retry download of %1$s</string>
+    <string name="voice_cd_delete">Delete %1$s</string>
+    <string name="voice_cd_preview">Preview %1$s</string>
+    <string name="voice_cd_set_active">Set %1$s as the active voice</string>
+    <!-- %1$s = voice name, %2$d = percent -->
+    <string name="voice_cd_downloading">Downloading %1$s, %2$d percent</string>
+
+    <!-- %1$d = percent -->
+    <string name="voice_download_percent">%1$d%%</string>
+    <!-- %1$s = voice name; announced when a download finishes -->
+    <string name="voice_download_done_announcement">%1$s downloaded</string>
+    <!-- %1$s = voice name, %2$s = error; announced on failure -->
+    <string name="voice_download_error_announcement">Download of %1$s failed: %2$s</string>
+    <!-- %1$s = voice name -->
+    <string name="voice_deleted_announcement">%1$s deleted</string>
+    <!-- %1$s = voice name -->
+    <string name="voice_set_active_announcement">%1$s is now the active voice</string>
+
+    <string name="voice_delete_title">Delete voice?</string>
+    <!-- %1$s = voice name -->
+    <string name="voice_delete_message">Delete %1$s from this device?</string>
+    <string name="voice_delete_confirm">Delete</string>
+
+    <string name="voice_preview_loading">Loading preview…</string>
+    <!-- %1$s = voice name -->
+    <string name="voice_preview_playing">Playing preview of %1$s</string>
+    <!-- %1$s = error message; announced -->
+    <string name="voice_preview_error_announcement">Preview failed: %1$s</string>
+
+    <!-- %1$s = language, %2$s = country, %3$s = quality, %4$s = size -->
+    <string name="voice_row_subtitle">%1$s (%2$s) • %3$s • %4$s</string>
+    <!-- %1$.1f = megabytes -->
+    <string name="voice_size_mb">%1$.1f MB</string>
+    <string name="voice_size_unknown">size unknown</string>
+
+    <!-- Spoken preview lines, one per language family. Heard, not shown. -->
+    <string name="preview_sample_default">Hello. This is a preview of this voice.</string>
+    <string name="preview_sample_uk">Добрий день. Це попередній перегляд цього голосу.</string>
+    <string name="preview_sample_de">Hallo. Dies ist eine Vorschau dieser Stimme.</string>
+    <string name="preview_sample_fr">Bonjour. Ceci est un aperçu de cette voix.</string>
+    <string name="preview_sample_es">Hola. Esta es una vista previa de esta voz.</string>
+    <string name="preview_sample_pt">Olá. Esta é uma prévia desta voz.</string>
+    <string name="preview_sample_it">Ciao. Questa è un\'anteprima di questa voce.</string>
+    <string name="preview_sample_ru">Здравствуйте. Это предварительный просмотр этого голоса.</string>
+    <string name="preview_sample_zh">你好。这是此语音的预览。</string>
+    <string name="preview_sample_ar">مرحباً. هذه معاينة لهذا الصوت.</string>
+</resources>

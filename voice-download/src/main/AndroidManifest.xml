@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Needed by VoiceCatalog / VoiceDownloadManager. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application>
+        <!-- Voice browser / download manager, launched from the engine
+             settings via VoiceListContract.ACTION_MANAGE_VOICES. -->
+        <activity
+            android:name=".VoiceListActivity"
+            android:exported="true"
+            android:label="@string/voice_list_title">
+            <intent-filter>
+                <action android:name="dev.ihorshevchuk.piper.tts.action.MANAGE_VOICES" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

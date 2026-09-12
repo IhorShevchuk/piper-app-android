@@ -1,18 +1,14 @@
 plugins {
-    id("com.android.application")
+    id("com.android.library")
     kotlin("android")
 }
 
 android {
-    namespace = "dev.ihorshevchuk.piper.app"
+    namespace = "dev.ihorshevchuk.piper.voicedownload"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "dev.ihorshevchuk.piper.app"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
     }
 
     compileOptions {
@@ -31,13 +27,17 @@ android {
 }
 
 dependencies {
-    // System TTS service module (this repo).
+    // TTS service module: VoicePrefs, FileVoiceStore, EspeakDataInstaller,
+    // and the voice-list entry-point contract. Same direction as :app.
     implementation(project(":tts-service"))
-    // Voice catalog + download manager + voice list UI (this repo).
-    implementation(project(":voice-download"))
     // Resolved to the sibling piper-android repo via the composite build
     // in settings.gradle.kts (no publishing step needed).
     implementation("dev.ihorshevchuk.piper:piper-engine")
-    implementation("dev.ihorshevchuk.piper:piper-utils")
     implementation("dev.ihorshevchuk.piper:piper-player")
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
+
+    testImplementation("junit:junit:4.13.2")
+    // Real org.json on the JVM: the parser uses the Android framework's
+    // org.json at runtime, which is an unmocked stub under unit tests.
+    testImplementation("org.json:json:20240303")
 }

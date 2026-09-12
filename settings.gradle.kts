@@ -13,7 +13,7 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "piper-app-android"
-include(":app")
+include(":app", ":tts-service", ":voice-download")
 
 // The Piper library lives in its own repo (twin of the iOS piper-objc
 // package). Check it out next to this repo:
