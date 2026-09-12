@@ -2,53 +2,82 @@
 <resources>
     <string name="app_name">Piper</string>
 
-    <!-- Main screen -->
-    <string name="installed_voices">Installed voices</string>
-    <string name="no_voices_message">No voices installed yet.\nDownload one from the catalog or import your own model.</string>
-    <string name="download_voices">Download voices</string>
-    <string name="import_voice_from_file">Import voice from file</string>
-    <string name="menu_help">Help</string>
-    <string name="menu_about">About</string>
+    <!-- Main screen (iOS MainView) -->
+    <string name="installed_voices">Installed Voices</string>
+    <string name="no_voices_message">No voices are installed yet.\nUse the Download Voice Model button below to add a voice.</string>
+    <string name="download_voice_model">Download Voice Model</string>
+    <string name="update_model_in_app">Import Model from Files</string>
 
-    <!-- Voice detail -->
-    <string name="voice_detail_title">Voice</string>
-    <string name="active_voice_badge">Active voice</string>
-    <string name="sample_text_hint">Sample text</string>
-    <string name="play_sample">Play sample</string>
+    <!-- Voice detail (iOS VoiceView) -->
+    <string name="voice_information">Voice Information</string>
+    <string name="info_model">Model</string>
+    <string name="info_country">Country</string>
+    <string name="info_language">Language</string>
+    <string name="info_version">Version</string>
+    <string name="info_quality">Quality</string>
+    <string name="info_sample_rate">Sample Rate</string>
+    <string name="play_sample">Play Sample</string>
     <string name="stop">Stop</string>
-    <string name="set_as_active_voice">Set as active voice</string>
-    <string name="delete_voice">Delete voice</string>
-    <string name="delete_voice_confirm_title">Delete voice?</string>
-    <string name="delete_voice_confirm_message">“%1$s” will be removed from this device.</string>
-    <string name="delete">Delete</string>
+    <string name="export_file">Export File</string>
+    <string name="speaker">Speaker</string>
+    <string name="sample_text">Sample Text</string>
+    <string name="sample_text_hint">Type text to hear this voice…</string>
+    <string name="uninstall_voice">Remove Voice Model</string>
+    <string name="uninstall_button">Remove</string>
+    <string name="uninstall_confirm_message">Remove %1$s from the app?</string>
     <string name="cancel">Cancel</string>
-    <string name="voice_deleted">Voice deleted</string>
-    <string name="voice_set_active">“%1$s” is now the active voice</string>
+    <string name="voice_removed">Voice model removed.</string>
+    <!-- Android-only: the active voice drives the system TTS service -->
+    <string name="set_as_active_voice">Set as Active Voice</string>
+    <string name="active_voice_badge">Active voice</string>
+    <string name="voice_set_active">%1$s is now the active voice.</string>
     <string name="preview_loading">Loading voice…</string>
-    <string name="preview_playing">Playing sample…</string>
-    <string name="preview_error">Could not play the sample: %1$s</string>
+    <string name="preview_playing">Playing…</string>
+    <string name="preview_error">Preview failed: %1$s</string>
+    <string name="export_error">Export failed: %1$s</string>
+    <string name="export_share_title">Share voice sample</string>
 
-    <!-- Import -->
-    <string name="import_error_not_model">That file is not a Piper model (expected a .onnx file).</string>
-    <string name="import_error_not_config">That file is not a voice config (expected a .onnx.json file).</string>
+    <!-- Import (iOS ImportVoiceView) -->
+    <string name="select_model">Select Model</string>
+    <string name="onnx_file">ONNX File</string>
+    <string name="select_json">Select JSON</string>
+    <string name="import_pick_model_label">Select Model: %1$s</string>
+    <string name="import_pick_json_label">Select JSON: %1$s</string>
+    <string name="import_invalid_model">The selected file is not a voice model: %1$s</string>
     <string name="import_error_copy">Could not import the file: %1$s</string>
-    <string name="import_choose_config_title">Import config file?</string>
-    <string name="import_choose_config_message">“%1$s” was imported.\n\nA voice can also have a config file (%2$s) with its language and quality info. Import it too?</string>
-    <string name="choose_file">Choose file</string>
-    <string name="skip">Skip</string>
-    <string name="import_done">Voice “%1$s” imported</string>
+    <string name="error">Error</string>
+    <string name="ok">OK</string>
+    <string name="import_invalid_config">The selected JSON file is not a valid voice configuration.</string>
+    <string name="import_mismatch">The model and configuration file names do not match.</string>
+    <string name="import_done">Voice model imported: %1$s</string>
 
-    <!-- Help -->
+    <!-- Help (iOS HelpView, lines 2-3 adapted for Android) -->
     <string name="help_title">Help</string>
-    <string name="help_body">Get voices\n\n• Download voices from the catalog: pick a language and quality, then tap Download.\n• Import your own: choose a .onnx model file, plus its .onnx.json config file if you have one.\n\nUse a voice\n\n• Tap an installed voice to preview it, set it as the active voice, or delete it.\n• The active voice is the one Piper uses by default.\n\nUse Piper in other apps\n\n• Open the system text-to-speech settings and select Piper as the preferred engine. Then any app that speaks (screen readers, book readers) can use your Piper voices.</string>
-    <string name="open_tts_settings">Open system TTS settings</string>
+    <string name="help_line_1">Install a voice from the Download Voice Model menu to start using the app.</string>
+    <string name="help_line_2">Go to Settings → System → Languages &amp; input → Text-to-speech output.</string>
+    <string name="help_line_3">Select Piper as your preferred TTS engine.</string>
+    <string name="help_line_4">Use Search if the voice does not appear in the list.</string>
+    <string name="help_line_5">Custom voices can be installed using Import Model from Files by selecting a .onnx model and its .json configuration.</string>
+    <string name="open_tts_settings">Open TTS Settings</string>
     <string name="tts_settings_unavailable">System TTS settings are not available on this device.</string>
 
-    <!-- About -->
-    <string name="about_title">About</string>
-    <string name="about_app_version">App version %1$s</string>
-    <string name="about_engine_version">Speech engine %1$s</string>
-    <string name="about_body">Piper for Android: offline neural text-to-speech, by Ihor Shevchuk.\n\nThe speech engine is the original Piper (piper1-gpl), running fully on your device. No network needed after a voice is downloaded.</string>
-    <string name="about_license">This app bundles Piper, which is licensed under the GNU General Public License v3.0.\n\nSource code:\n• App: github.com/IhorShevchuk/piper-app-android\n• Engine library: github.com/IhorShevchuk/piper-android\n• Upstream Piper: github.com/OHF-Voice/piper1-gpl</string>
+    <!-- About (iOS AboutAppView) -->
+    <string name="about_app">About the App</string>
+    <string name="credits_and_legal">Credits &amp; Legal</string>
+    <string name="license_piper_title">Piper1-GPL</string>
+    <string name="license_piper_description">Piper is a fast, open-source neural text-to-speech engine developed by the OHF-Voice community.</string>
+    <string name="license_espeak_title">eSpeak-NG</string>
+    <string name="license_espeak_description">eSpeak NG is a lightweight open-source text-to-speech engine supporting over 100 languages and accents.</string>
+    <string name="license_app_title">Piper App for Android</string>
+    <string name="license_app_description">Piper App for Android, developed by Ihor Shevchuk, is licensed under GPL-3.0.</string>
+    <string name="tts_engine_status">Piper TTS Status</string>
+    <string name="tts_status_active">Piper is the system TTS engine.</string>
+    <string name="tts_status_inactive">Piper is not the system TTS engine.</string>
+    <string name="app_version">App Version</string>
+    <string name="share_feedback">Share Feedback</string>
     <string name="open_in_browser">Open %1$s in browser</string>
+
+    <!-- Menus -->
+    <string name="menu_help">Help</string>
+    <string name="menu_about">About the App</string>
 </resources>

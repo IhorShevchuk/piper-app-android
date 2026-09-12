@@ -1,23 +1,32 @@
 package dev.ihorshevchuk.piper.app
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
+import android.util.Log
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
-import dev.ihorshevchuk.piper.engine.PiperEngine
+import android.widget.Toast
 
 /**
- * About screen, mirroring the iOS AboutAppView: versions, links, license.
+ * About screen, mirroring the iOS AboutAppView: Credits & Legal, engine
+ * status, app version, and a feedback link.
+ *
+ * The iOS "Audio Unit Status / Connect" row becomes the Android TTS engine
+ * status: whether Piper is the system's selected TTS engine, with a button
+ * to the system TTS settings when it is not.
  */
 class AboutActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        title = getString(R.string.about_app)
 
         val pad = dp(16)
         val root = LinearLayout(this).apply {
@@ -25,55 +34,110 @@ class AboutActivity : Activity() {
             setPadding(pad, pad, pad, pad)
         }
 
-        val title = TextView(this).apply {
-            text = getString(R.string.about_title)
+        root.addView(TextView(this).apply {
+            text = getString(R.string.credits_and_legal)
             setTypeface(typeface, Typeface.BOLD)
-            textSize = 20f
+            textSize = 18f
             setPadding(0, 0, 0, dp(8))
+        })
+        for ((titleRes, descRes, url) in CREDITS) {
+            addCredit(root,
+                getString(titleRes), getString(descRes), url)
         }
-        val versions = TextView(this).apply {
+
+        root.addView(TextView(this).apply {
+            val active = isPiperDefaultTts()
+            text = getString(R.string.tts_engine_status) + ": " +
+                getString(if (active) R.string.tts_status_active
+                else R.string.tts_status_inactive)
+            setPadding(0, dp(16), 0, 0)
+        })
+        if (!isPiperDefaultTts()) {
+            root.addView(Button(this).apply {
+                text = getString(R.string.open_tts_settings)
+                setOnClickListener { openTtsSettings() }
+            })
+        }
+
+        root.addView(TextView(this).apply {
             @Suppress("DEPRECATION")
             val appVersion =
                 packageManager.getPackageInfo(packageName, 0).versionName ?: "?"
-            text = getString(R.string.about_app_version, appVersion) + "\n" +
-                getString(R.string.about_engine_version, PiperEngine.version())
-            setPadding(0, 0, 0, dp(8))
-        }
-        val body = TextView(this).apply {
-            text = getString(R.string.about_body)
-            setPadding(0, 0, 0, dp(8))
-        }
-        val license = TextView(this).apply {
-            text = getString(R.string.about_license)
-            setPadding(0, 0, 0, dp(8))
-        }
+            text = getString(R.string.app_version) + ": " + appVersion
+            setPadding(0, dp(16), 0, 0)
+        })
 
-        root.addView(title)
-        root.addView(versions)
-        root.addView(body)
-        root.addView(license)
-        for ((label, url) in LINKS) {
-            root.addView(Button(this).apply {
-                text = getString(R.string.open_in_browser, label)
-                contentDescription = "$label: $url"
-                setOnClickListener { openUrl(url) }
-            })
-        }
+        root.addView(Button(this).apply {
+            text = getString(R.string.share_feedback)
+            setOnClickListener { openUrl(FEEDBACK_URL) }
+            setPadding(0, dp(8), 0, 0)
+        })
 
         setContentView(ScrollView(this).apply { addView(root) })
     }
 
+    private fun addCredit(root: LinearLayout, title: String, description: String, url: String) {
+        root.addView(TextView(this).apply {
+            text = title
+            setTypeface(typeface, Typeface.BOLD)
+            textSize = 16f
+            setPadding(0, dp(8), 0, 0)
+        })
+        root.addView(TextView(this).apply {
+            text = description
+            setPadding(0, 0, 0, dp(2))
+        })
+        root.addView(Button(this).apply {
+            text = getString(R.string.open_in_browser, title)
+            contentDescription = "$title: $url"
+            setOnClickListener { openUrl(url) }
+        })
+    }
+
+    private fun isPiperDefaultTts(): Boolean =
+        try {
+            Settings.Secure.getString(contentResolver, "tts_default_synth")
+                ?.contains(packageName) == true
+        } catch (e: Exception) {
+            Log.w(TAG, "reading default TTS engine failed", e)
+            false
+        }
+
+    private fun openTtsSettings() {
+        try {
+            startActivity(Intent("com.android.settings.TTS_SETTINGS"))
+        } catch (e: ActivityNotFoundException) {
+            Toast.makeText(this, R.string.tts_settings_unavailable,
+                Toast.LENGTH_LONG).show()
+        }
+    }
+
     private fun openUrl(url: String) {
-        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        } catch (e: ActivityNotFoundException) {
+            Toast.makeText(this, getString(R.string.open_in_browser, url),
+                Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 
     companion object {
-        private val LINKS = listOf(
-            "piper-app-android" to "https://github.com/IhorShevchuk/piper-app-android",
-            "piper-android" to "https://github.com/IhorShevchuk/piper-android",
-            "piper1-gpl" to "https://github.com/OHF-Voice/piper1-gpl",
+        private const val TAG = "PiperAbout"
+        private const val FEEDBACK_URL =
+            "mailto:piper-feedback@ihor-shevchuk.dev?subject=Piper%20feedback"
+
+        private val CREDITS = listOf(
+            Triple(R.string.license_piper_title,
+                R.string.license_piper_description,
+                "https://github.com/OHF-Voice/piper1-gpl"),
+            Triple(R.string.license_espeak_title,
+                R.string.license_espeak_description,
+                "https://github.com/espeak-ng/espeak-ng-spm"),
+            Triple(R.string.license_app_title,
+                R.string.license_app_description,
+                "https://github.com/IhorShevchuk/piper-app-android"),
         )
     }
 }

@@ -42,6 +42,8 @@ dependencies {
     implementation("dev.ihorshevchuk.piper:piper-player")
     // Activity Result API (voice file import).
     implementation("androidx.activity:activity:1.9.3")
+    // FileProvider for sharing exported WAV samples.
+    implementation("androidx.core:core:1.13.1")
 
     testImplementation("junit:junit:4.13.2")
 }

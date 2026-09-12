@@ -16,7 +16,11 @@
         <activity
             android:name=".VoiceDetailActivity"
             android:exported="false"
-            android:label="@string/voice_detail_title" />
+            android:label="@string/voice_information" />
+        <activity
+            android:name=".ImportVoiceActivity"
+            android:exported="false"
+            android:label="@string/update_model_in_app" />
         <activity
             android:name=".HelpActivity"
             android:exported="false"
@@ -24,7 +28,17 @@
         <activity
             android:name=".AboutActivity"
             android:exported="false"
-            android:label="@string/about_title" />
+            android:label="@string/about_app" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>
