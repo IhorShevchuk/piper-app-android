@@ -40,4 +40,8 @@ dependencies {
     implementation("dev.ihorshevchuk.piper:piper-engine")
     implementation("dev.ihorshevchuk.piper:piper-utils")
     implementation("dev.ihorshevchuk.piper:piper-player")
+    // Activity Result API (voice file import).
+    implementation("androidx.activity:activity:1.9.3")
+
+    testImplementation("junit:junit:4.13.2")
 }

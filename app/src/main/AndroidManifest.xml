@@ -13,6 +13,18 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".VoiceDetailActivity"
+            android:exported="false"
+            android:label="@string/voice_detail_title" />
+        <activity
+            android:name=".HelpActivity"
+            android:exported="false"
+            android:label="@string/help_title" />
+        <activity
+            android:name=".AboutActivity"
+            android:exported="false"
+            android:label="@string/about_title" />
     </application>
 
 </manifest>

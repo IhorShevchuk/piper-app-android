@@ -1,4 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Piper</string>
+
+    <!-- Main screen -->
+    <string name="installed_voices">Installed voices</string>
+    <string name="no_voices_message">No voices installed yet.\nDownload one from the catalog or import your own model.</string>
+    <string name="download_voices">Download voices</string>
+    <string name="import_voice_from_file">Import voice from file</string>
+    <string name="menu_help">Help</string>
+    <string name="menu_about">About</string>
+
+    <!-- Voice detail -->
+    <string name="voice_detail_title">Voice</string>
+    <string name="active_voice_badge">Active voice</string>
+    <string name="sample_text_hint">Sample text</string>
+    <string name="play_sample">Play sample</string>
+    <string name="stop">Stop</string>
+    <string name="set_as_active_voice">Set as active voice</string>
+    <string name="delete_voice">Delete voice</string>
+    <string name="delete_voice_confirm_title">Delete voice?</string>
+    <string name="delete_voice_confirm_message">“%1$s” will be removed from this device.</string>
+    <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
+    <string name="voice_deleted">Voice deleted</string>
+    <string name="voice_set_active">“%1$s” is now the active voice</string>
+    <string name="preview_loading">Loading voice…</string>
+    <string name="preview_playing">Playing sample…</string>
+    <string name="preview_error">Could not play the sample: %1$s</string>
+
+    <!-- Import -->
+    <string name="import_error_not_model">That file is not a Piper model (expected a .onnx file).</string>
+    <string name="import_error_not_config">That file is not a voice config (expected a .onnx.json file).</string>
+    <string name="import_error_copy">Could not import the file: %1$s</string>
+    <string name="import_choose_config_title">Import config file?</string>
+    <string name="import_choose_config_message">“%1$s” was imported.\n\nA voice can also have a config file (%2$s) with its language and quality info. Import it too?</string>
+    <string name="choose_file">Choose file</string>
+    <string name="skip">Skip</string>
+    <string name="import_done">Voice “%1$s” imported</string>
+
+    <!-- Help -->
+    <string name="help_title">Help</string>
+    <string name="help_body">Get voices\n\n• Download voices from the catalog: pick a language and quality, then tap Download.\n• Import your own: choose a .onnx model file, plus its .onnx.json config file if you have one.\n\nUse a voice\n\n• Tap an installed voice to preview it, set it as the active voice, or delete it.\n• The active voice is the one Piper uses by default.\n\nUse Piper in other apps\n\n• Open the system text-to-speech settings and select Piper as the preferred engine. Then any app that speaks (screen readers, book readers) can use your Piper voices.</string>
+    <string name="open_tts_settings">Open system TTS settings</string>
+    <string name="tts_settings_unavailable">System TTS settings are not available on this device.</string>
+
+    <!-- About -->
+    <string name="about_title">About</string>
+    <string name="about_app_version">App version %1$s</string>
+    <string name="about_engine_version">Speech engine %1$s</string>
+    <string name="about_body">Piper for Android: offline neural text-to-speech, by Ihor Shevchuk.\n\nThe speech engine is the original Piper (piper1-gpl), running fully on your device. No network needed after a voice is downloaded.</string>
+    <string name="about_license">This app bundles Piper, which is licensed under the GNU General Public License v3.0.\n\nSource code:\n• App: github.com/IhorShevchuk/piper-app-android\n• Engine library: github.com/IhorShevchuk/piper-android\n• Upstream Piper: github.com/OHF-Voice/piper1-gpl</string>
+    <string name="open_in_browser">Open %1$s in browser</string>
 </resources>

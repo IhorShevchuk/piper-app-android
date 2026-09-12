@@ -1,170 +1,248 @@
 package dev.ihorshevchuk.piper.app
 
-import android.app.Activity
+import android.app.AlertDialog
+import android.content.Intent
+import android.graphics.Typeface
+import android.net.Uri
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.util.Log
-import android.view.Gravity
+import android.view.MenuItem
+import android.view.View
+import android.widget.ArrayAdapter
 import android.widget.Button
-import android.widget.EditText
 import android.widget.LinearLayout
-import android.widget.SeekBar
+import android.widget.ListView
 import android.widget.TextView
 import android.widget.Toast
-import dev.ihorshevchuk.piper.engine.PiperCreateOptions
-import dev.ihorshevchuk.piper.engine.PiperEngine
-import dev.ihorshevchuk.piper.player.PiperPlayer
+import android.widget.Toolbar
+import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
+import dev.ihorshevchuk.piper.tts.FileVoiceStore
+import dev.ihorshevchuk.piper.tts.VoiceInfo
+import dev.ihorshevchuk.piper.voicedownload.VoiceListActivity
 import java.io.File
 
 /**
- * Minimal sample app: type text, pick a rate, speak.
+ * App home screen, mirroring the iOS MainView: the installed-voices list,
+ * download/import actions, and Help / About in the toolbar.
  *
- * The voice (.onnx + .onnx.json) is resolved from <files>/voices/ (use
- * scripts/download-voice.sh, then push the files there, or bundle them under
- * app/src/main/assets/voices/ - they are copied to filesDir on first run).
- * espeak-ng-data is likewise copied from assets to <files>/espeak-ng-data on
- * first run; see README "espeak-ng-data packaging".
- *
- * Plain Views on purpose - no Compose dependency for the scaffold.
+ * Plain Views on purpose - no Compose dependency for the app shell.
  */
-class MainActivity : Activity() {
+class MainActivity : ComponentActivity() {
 
-    private val player = PiperPlayer()
+    private lateinit var voicesDir: File
+    private lateinit var listView: ListView
+    private lateinit var emptyView: TextView
 
-    @Volatile
-    private var engine: PiperEngine? = null
+    /** Model file name chosen in the first import step, awaiting its config. */
+    private var pendingModelName: String? = null
 
-    private lateinit var input: EditText
-    private lateinit var rateBar: SeekBar
-    private lateinit var rateLabel: TextView
-    private lateinit var status: TextView
-    private lateinit var speakButton: Button
+    private val pickModel =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+            uri ?: return@registerForActivityResult
+            importModel(uri)
+        }
+
+    private val pickConfig =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+            uri ?: return@registerForActivityResult
+            importConfig(uri)
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val pad = (16 * resources.displayMetrics.density).toInt()
+        voicesDir = File(filesDir, FileVoiceStore.VOICES_DIR_NAME).apply { mkdirs() }
+
+        val pad = dp(16)
         val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+
+        val toolbar = Toolbar(this).apply {
+            title = getString(R.string.app_name)
+            inflateMenu(R.menu.main_menu)
+            setOnMenuItemClickListener { item: MenuItem ->
+                when (item.itemId) {
+                    R.id.menu_help -> {
+                        startActivity(Intent(this@MainActivity, HelpActivity::class.java))
+                        true
+                    }
+                    R.id.menu_about -> {
+                        startActivity(Intent(this@MainActivity, AboutActivity::class.java))
+                        true
+                    }
+                    else -> false
+                }
+            }
+        }
+        root.addView(toolbar, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT))
+
+        val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(pad, pad, pad, pad)
         }
 
-        input = EditText(this).apply {
-            hint = "Text to speak"
-            minLines = 3
-            gravity = Gravity.TOP
+        val header = TextView(this).apply {
+            text = getString(R.string.installed_voices)
+            setTypeface(typeface, Typeface.BOLD)
+            textSize = 18f
         }
-        rateLabel = TextView(this)
-        rateBar = SeekBar(this).apply { max = 180; progress = 80 } // 20..200 -> 0.2x..2.0x
-        speakButton = Button(this).apply { text = "Speak" }
-        val stopButton = Button(this).apply { text = "Stop" }
-        status = TextView(this).apply { text = "Ready" }
+        content.addView(header)
 
-        fun refreshRateLabel() {
-            rateLabel.text = "Rate: ${"%.2f".format(currentRate())}x"
+        emptyView = TextView(this).apply {
+            text = getString(R.string.no_voices_message)
+            setPadding(0, dp(8), 0, dp(8))
+            visibility = View.GONE
         }
-        rateBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(s: SeekBar?, p: Int, fromUser: Boolean) = refreshRateLabel()
-            override fun onStartTrackingTouch(s: SeekBar?) = Unit
-            override fun onStopTrackingTouch(s: SeekBar?) = Unit
-        })
-        refreshRateLabel()
-
-        speakButton.setOnClickListener { speak() }
-        stopButton.setOnClickListener {
-            player.stop()
-            status.text = "Stopped"
+        listView = ListView(this).apply {
+            emptyView = this@MainActivity.emptyView
+            setOnItemClickListener { _, _, position, _ ->
+                val voice = installedVoices().getOrNull(position) ?: return@setOnItemClickListener
+                startActivity(Intent(this@MainActivity, VoiceDetailActivity::class.java)
+                    .putExtra(VoiceDetailActivity.EXTRA_VOICE_NAME, voice.name))
+            }
         }
+        content.addView(emptyView)
+        content.addView(listView, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
 
-        root.addView(input,
-            LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
-        root.addView(rateLabel)
-        root.addView(rateBar)
-        root.addView(speakButton)
-        root.addView(stopButton)
-        root.addView(status)
+        val downloadButton = Button(this).apply {
+            text = getString(R.string.download_voices)
+            setOnClickListener {
+                startActivity(Intent(this@MainActivity, VoiceListActivity::class.java))
+            }
+        }
+        val importButton = Button(this).apply {
+            text = getString(R.string.import_voice_from_file)
+            setOnClickListener { pickModel.launch(arrayOf("*/*")) }
+        }
+        content.addView(downloadButton)
+        content.addView(importButton)
+
+        root.addView(content, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.MATCH_PARENT))
         setContentView(root)
     }
 
-    override fun onDestroy() {
-        player.stop()
-        try {
-            engine?.close()
-        } catch (_: Exception) {
-        }
-        engine = null
-        super.onDestroy()
+    override fun onResume() {
+        super.onResume()
+        refreshList()
     }
 
-    private fun currentRate(): Float = (rateBar.progress + 20) / 100f
+    private fun installedVoices(): List<VoiceInfo> =
+        try {
+            FileVoiceStore(voicesDir).listVoices()
+        } catch (e: Exception) {
+            Log.w(TAG, "listing installed voices failed", e)
+            emptyList()
+        }
 
-    private fun speak() {
-        val text = input.text.toString()
-        if (text.isBlank()) {
-            Toast.makeText(this, "Enter some text first", Toast.LENGTH_SHORT).show()
+    private fun refreshList() {
+        val voices = installedVoices()
+        listView.adapter = ArrayAdapter(
+            this, android.R.layout.simple_list_item_1, voices.map { it.name })
+        emptyView.visibility = if (voices.isEmpty()) View.VISIBLE else View.GONE
+    }
+
+    // ------------------------------------------------------------------
+    // Import voice from file (iOS "update_model_in_app")
+    // ------------------------------------------------------------------
+
+    private fun importModel(uri: Uri) {
+        val name = displayNameOf(uri)
+        if (name == null || !ImportVoiceHelper.isModelFileName(name)) {
+            Toast.makeText(this, R.string.import_error_not_model, Toast.LENGTH_LONG).show()
             return
         }
-        val rate = currentRate()
-        status.text = "Loading voice…"
-        speakButton.isEnabled = false
+        pendingModelName = name
         Thread {
             try {
-                val eng = getEngine()
-                runOnUiThread { status.text = "Speaking…" }
-                player.play(eng, text, rate) { ms ->
-                    runOnUiThread { status.text = "Playing… ${ms}ms" }
-                }
+                copyUriTo(uri, File(voicesDir, name))
+                runOnUiThread { promptForConfig(name) }
             } catch (e: Exception) {
-                Log.e(TAG, "speak failed", e)
-                runOnUiThread { status.text = "Error: ${e.message}" }
-            } finally {
-                runOnUiThread { speakButton.isEnabled = true }
+                Log.w(TAG, "importing model failed", e)
+                pendingModelName = null
+                runOnUiThread {
+                    Toast.makeText(this, getString(R.string.import_error_copy, e.message),
+                        Toast.LENGTH_LONG).show()
+                }
             }
-        }.start()
+        }.apply { isDaemon = true; start() }
     }
 
-    @Synchronized
-    private fun getEngine(): PiperEngine {
-        engine?.let { return it }
-
-        val voiceName = "en_US-lessac-medium"
-        val voicesDir = File(filesDir, "voices").apply { mkdirs() }
-        val modelFile = File(voicesDir, "$voiceName.onnx")
-        if (!modelFile.isFile) copyAsset("voices/$voiceName.onnx", modelFile)
-        val configFile = File(voicesDir, "$voiceName.onnx.json")
-        if (!configFile.isFile) copyAsset("voices/$voiceName.onnx.json", configFile)
-
-        val espeakDir = File(filesDir, "espeak-ng-data")
-        if (!espeakDir.isDirectory) copyAssetDir("espeak-ng-data", espeakDir)
-
-        // configPath null -> native uses modelPath + ".json", same as iOS.
-        val options = PiperCreateOptions(modelPath = modelFile.absolutePath)
-        return PiperEngine(options, filesDir).also {
-            engine = it
-            Log.i(TAG, "Piper native version: ${PiperEngine.version()}")
-        }
+    private fun promptForConfig(modelName: String) {
+        val configName = ImportVoiceHelper.configFileNameFor(modelName)
+        AlertDialog.Builder(this)
+            .setTitle(R.string.import_choose_config_title)
+            .setMessage(getString(R.string.import_choose_config_message, modelName, configName))
+            .setPositiveButton(R.string.choose_file) { _, _ ->
+                pickConfig.launch(arrayOf("*/*"))
+            }
+            .setNegativeButton(R.string.skip) { _, _ ->
+                pendingModelName = null
+                refreshList()
+                Toast.makeText(this, getString(R.string.import_done,
+                    ImportVoiceHelper.voiceKeyFor(modelName)), Toast.LENGTH_SHORT).show()
+            }
+            .setCancelable(false)
+            .show()
     }
 
-    private fun copyAsset(assetPath: String, dest: File) {
-        assets.open(assetPath).use { input ->
-            dest.parentFile?.mkdirs()
-            dest.outputStream().use { output -> input.copyTo(output) }
-        }
-    }
-
-    private fun copyAssetDir(assetDir: String, destDir: File) {
-        val entries = assets.list(assetDir) ?: return
-        if (entries.isEmpty()) {
-            // Leaf file (assets.list returns empty for files).
-            copyAsset(assetDir, File(destDir.parentFile, destDir.name))
+    private fun importConfig(uri: Uri) {
+        val modelName = pendingModelName
+        pendingModelName = null
+        if (modelName == null) return
+        val expectedName = ImportVoiceHelper.configFileNameFor(modelName)
+        val name = displayNameOf(uri)
+        if (name == null || !ImportVoiceHelper.isConfigFileName(name) || name != expectedName) {
+            Toast.makeText(this, R.string.import_error_not_config, Toast.LENGTH_LONG).show()
+            refreshList()
             return
         }
-        destDir.mkdirs()
-        for (entry in entries) {
-            copyAssetDir("$assetDir/$entry", File(destDir, entry))
-        }
+        Thread {
+            try {
+                copyUriTo(uri, File(voicesDir, expectedName))
+                runOnUiThread {
+                    refreshList()
+                    Toast.makeText(this, getString(R.string.import_done,
+                        ImportVoiceHelper.voiceKeyFor(modelName)), Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "importing config failed", e)
+                runOnUiThread {
+                    Toast.makeText(this, getString(R.string.import_error_copy, e.message),
+                        Toast.LENGTH_LONG).show()
+                    refreshList()
+                }
+            }
+        }.apply { isDaemon = true; start() }
     }
 
+    private fun displayNameOf(uri: Uri): String? =
+        try {
+            contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME),
+                null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) cursor.getString(0) else null
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "resolving display name failed", e)
+            null
+        }
+
+    private fun copyUriTo(uri: Uri, dest: File) {
+        contentResolver.openInputStream(uri)?.use { input ->
+            dest.outputStream().use { output -> input.copyTo(output) } }
+            ?: throw IllegalStateException("cannot open $uri")
+    }
+
+    private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
+
     companion object {
-        private const val TAG = "PiperApp"
+        private const val TAG = "PiperMain"
     }
 }
