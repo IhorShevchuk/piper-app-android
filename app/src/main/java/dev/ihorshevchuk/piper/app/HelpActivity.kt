@@ -5,7 +5,6 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.graphics.Typeface
 import android.os.Bundle
-import android.provider.Settings
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -49,7 +48,7 @@ class HelpActivity : Activity() {
 
     private fun openTtsSettings() {
         try {
-            startActivity(Intent(Settings.ACTION_TTS_SETTINGS))
+            startActivity(Intent("com.android.settings.TTS_SETTINGS"))
         } catch (e: ActivityNotFoundException) {
             Toast.makeText(this, R.string.tts_settings_unavailable,
                 Toast.LENGTH_LONG).show()
