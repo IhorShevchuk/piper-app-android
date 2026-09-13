@@ -9,7 +9,7 @@ import android.speech.tts.Voice
 import android.util.Log
 import dev.ihorshevchuk.piper.engine.PiperCreateOptions
 import dev.ihorshevchuk.piper.engine.PiperEngine
-import dev.ihorshevchuk.piper.player.SpeedCurve
+import dev.ihorshevchuk.piper.utils.SpeedCurve
 import java.io.File
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
@@ -36,6 +36,15 @@ class PiperTtsService : TextToSpeechService() {
     @Volatile
     private var engine: PiperEngine? = null
     private var loadedVoiceName: String? = null
+
+    /**
+     * Native sample rate of the loaded voice, read from its config JSON at
+     * load time. callback.start() must be told the real rate: the engine's
+     * currentSampleRate is only updated once synthesis produces audio, so
+     * on the first utterance it would still hold the previous voice's rate
+     * (or the 22050 default).
+     */
+    private var loadedSampleRate: Int = VoiceSampleRate.DEFAULT
 
     @Volatile
     private var currentLocale: Locale = Locale.getDefault()
@@ -100,7 +109,7 @@ class PiperTtsService : TextToSpeechService() {
             )
             if (voice == null) {
                 Log.w(TAG, "onSynthesizeText: no voices installed")
-                callback.error(TextToSpeech.ERROR_NOT_INSTALLED_YET)
+                reportError(callback, TextToSpeech.ERROR_NOT_INSTALLED_YET)
                 return
             }
 
@@ -115,14 +124,15 @@ class PiperTtsService : TextToSpeechService() {
                 }
                 val eng = engineFor(voice)
                 if (eng == null) {
-                    callback.error(TextToSpeech.ERROR_SYNTHESIS)
+                    reportError(callback, TextToSpeech.ERROR_SYNTHESIS)
                     return
                 }
-                val sampleRate = eng.currentSampleRate.get().takeIf { it > 0 } ?: 22050
+                val sampleRate = loadedSampleRate
                 if (callback.start(sampleRate, AudioFormat.ENCODING_PCM_16BIT, 1)
                     != TextToSpeech.SUCCESS
                 ) {
                     Log.w(TAG, "synthesis callback refused start")
+                    reportError(callback, TextToSpeech.ERROR_SYNTHESIS)
                     return
                 }
                 val options = eng.defaultSynthesizeOptions().copy(lengthScale = lengthScale)
@@ -149,11 +159,23 @@ class PiperTtsService : TextToSpeechService() {
         } catch (e: Exception) {
             Log.e(TAG, "onSynthesizeText failed", e)
             try {
-                if (callback.hasStarted()) callback.done()
-                else callback.error(TextToSpeech.ERROR_SYNTHESIS)
+                // The framework only dispatches the error once done() is
+                // called; returning after error() alone looks like a
+                // successful empty utterance to the client.
+                reportError(callback, TextToSpeech.ERROR_SYNTHESIS)
             } catch (_: Exception) {
             }
         }
+    }
+
+    /**
+     * Reports a synthesis failure the way the framework expects: error()
+     * followed by done(). espeak-ng's Android port fixed this exact bug in
+     * 2026 - without the done(), clients see onDone and never onError.
+     */
+    private fun reportError(callback: SynthesisCallback, errorCode: Int) {
+        callback.error(errorCode)
+        callback.done()
     }
 
     override fun onStop() {
@@ -162,6 +184,14 @@ class PiperTtsService : TextToSpeechService() {
         // sentences even mid-utterance.
         stopRequested.set(true)
         engine?.cancel()
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        // PiperEngine.onTrimMemory never blocks: it queues the release /
+        // recreate work on the engine thread behind any in-flight synthesis.
+        // The volatile read is enough; a null or closed engine is a no-op.
+        engine?.onTrimMemory(level)
     }
 
     override fun onDestroy() {
@@ -174,6 +204,7 @@ class PiperTtsService : TextToSpeechService() {
             }
             engine = null
             loadedVoiceName = null
+            loadedSampleRate = VoiceSampleRate.DEFAULT
         }
         super.onDestroy()
         Log.i(TAG, "PiperTtsService destroyed")
@@ -199,6 +230,7 @@ class PiperTtsService : TextToSpeechService() {
             PiperEngine(options, filesDir).also {
                 engine = it
                 loadedVoiceName = voice.name
+                loadedSampleRate = VoiceSampleRate.fromConfig(voice.configFile)
                 currentLocale = voice.locale
                 Log.i(TAG, "loaded voice ${voice.name} (native ${PiperEngine.version()})")
             }
@@ -206,6 +238,7 @@ class PiperTtsService : TextToSpeechService() {
             Log.e(TAG, "failed to load voice ${voice.name}", e)
             engine = null
             loadedVoiceName = null
+            loadedSampleRate = VoiceSampleRate.DEFAULT
             null
         }
     }
@@ -311,7 +344,9 @@ class PiperTtsService : TextToSpeechService() {
     }
 
     override fun onGetFeaturesForLanguage(lang: String, country: String, variant: String): Set<String> {
-        return emptySet()
+        // Advertise fully-offline synthesis so clients asking the framework
+        // whether an engine can synthesize without a network get an answer.
+        return setOf(TextToSpeech.Engine.KEY_FEATURE_EMBEDDED_SYNTHESIS)
     }
 
     companion object {

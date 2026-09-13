@@ -2,10 +2,10 @@
 
 Piper for Android: offline neural text-to-speech. iOS twin: piper-app.
 
-The engine library lives in the sibling `piper-android` repo
+The engine library lives in the sibling `piper-kotlin` repo
 (twin of the iOS piper-objc package). Check out both repos side by side:
 
-    ~/workspace/piper-android      - :piper-engine, :piper-utils, :piper-player
+    ~/workspace/piper-kotlin      - :piper-engine, :piper-utils, :piper-player
     ~/workspace/piper-app-android  - this repo (:app, :tts-service, :voice-download)
 
 ## Modules
@@ -20,7 +20,7 @@ The engine library lives in the sibling `piper-android` repo
 
 ## Build
 
-1. In piper-android: `scripts/fetch-native-deps.sh`
+1. In piper-kotlin: `scripts/fetch-native-deps.sh`
 2. Stage espeak-ng-data: `./scripts/stage-espeak-data.sh`
    (compiles the vendored espeak-ng dictionaries into
    `app/src/main/assets/espeak-ng-data/`; gitignored, ~31 MB)
