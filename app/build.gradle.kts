@@ -46,4 +46,7 @@ dependencies {
     implementation("androidx.core:core:1.13.1")
 
     testImplementation("junit:junit:4.13.2")
+    // Real org.json for JVM unit tests: android.jar only ships stubs that
+    // throw, so JSON parsing paths would silently hit their fallbacks.
+    testImplementation("org.json:json:20240303")
 }
