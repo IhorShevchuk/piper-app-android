@@ -4,7 +4,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.LinearLayout
-import android.widget.ProgressBar
+import android.widget.LinearLayout.LayoutParams
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
@@ -162,16 +162,17 @@ class VoiceListAdapter(
                     ) { onDelete(e) })
                 }
                 rowData.downloadState == RowDownloadState.DOWNLOADING -> {
-                    val bar = ProgressBar(
-                        context, null, android.R.attr.progressBarStyleHorizontal
-                    ).apply {
-                        max = 100
-                        progress = rowData.progressPercent
+                    // 1:1 with iOS: the circular progress indicator, not a
+                    // horizontal bar.
+                    val dial = CircularProgressView(context).apply {
+                        progress = rowData.progressPercent / 100f
                         contentDescription = context.getString(
                             R.string.voice_cd_downloading,
                             e.displayName, rowData.progressPercent
                         )
-                        layoutParams = LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f)
+                        layoutParams = LayoutParams(dp(40), dp(40)).apply {
+                            gravity = android.view.Gravity.CENTER_VERTICAL
+                        }
                     }
                     val pct = TextView(context).apply {
                         text = context.getString(
@@ -180,7 +181,7 @@ class VoiceListAdapter(
                         textSize = 14f
                         setPadding(dp(8), 0, dp(8), 0)
                     }
-                    actions.addView(bar)
+                    actions.addView(dial)
                     actions.addView(pct)
                     actions.addView(actionButton(
                         R.string.voice_action_cancel,

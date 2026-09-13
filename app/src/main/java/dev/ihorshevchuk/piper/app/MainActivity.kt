@@ -105,6 +105,14 @@ class MainActivity : ComponentActivity() {
         }
         content.addView(downloadButton)
         content.addView(importButton)
+        val readButton = Button(this).apply {
+            text = getString(R.string.read_text_button)
+            setOnClickListener {
+                startActivity(Intent(this@MainActivity,
+                    dev.ihorshevchuk.piper.app.reader.ReaderActivity::class.java))
+            }
+        }
+        content.addView(readButton)
 
         root.addView(content, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,

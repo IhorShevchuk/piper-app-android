@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Launcher background, 1:1 with the iOS icon's white field. -->
+    <color name="ic_launcher_background">#FFFFFF</color>
+    <!-- Accent, 1:1 with the iOS accent color (system blue / link). -->
+    <color name="piper_accent">#007AFF</color>
+</resources>

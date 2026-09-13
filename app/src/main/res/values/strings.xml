@@ -77,6 +77,21 @@
     <string name="share_feedback">Share Feedback</string>
     <string name="open_in_browser">Open %1$s in browser</string>
 
+    <!-- Reader -->
+    <string name="reader_title">Read Text</string>
+    <string name="read_text_button">Read Text</string>
+    <string name="reader_voice">Voice</string>
+    <string name="reader_speed">Reading speed</string>
+    <string name="reader_speed_value">Reading speed: %1$d%%</string>
+    <string name="reader_speed_announcement">Reading speed, %1$d percent</string>
+    <string name="reader_text">Text</string>
+    <string name="reader_text_hint">Type or paste text to read aloud…</string>
+    <string name="reader_play">Read</string>
+    <string name="reader_empty_text">Type some text to read first.</string>
+    <string name="reader_started">Reading started</string>
+    <string name="reader_finished">Reading finished</string>
+    <string name="reader_error">Reading failed: %1$s</string>
+
     <!-- Menus -->
     <string name="menu_help">Help</string>
     <string name="menu_about">About the App</string>
