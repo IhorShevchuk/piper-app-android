@@ -30,7 +30,7 @@ dependencies {
     // TTS service module: VoicePrefs, FileVoiceStore, EspeakDataInstaller,
     // and the voice-list entry-point contract. Same direction as :app.
     implementation(project(":tts-service"))
-    // Resolved to the sibling piper-android repo via the composite build
+    // Resolved to the sibling piper-kotlin repo via the composite build
     // in settings.gradle.kts (no publishing step needed).
     implementation("dev.ihorshevchuk.piper:piper-engine")
     implementation("dev.ihorshevchuk.piper:piper-player")

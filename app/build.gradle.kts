@@ -35,7 +35,7 @@ dependencies {
     implementation(project(":tts-service"))
     // Voice catalog + download manager + voice list UI (this repo).
     implementation(project(":voice-download"))
-    // Resolved to the sibling piper-android repo via the composite build
+    // Resolved to the sibling piper-kotlin repo via the composite build
     // in settings.gradle.kts (no publishing step needed).
     implementation("dev.ihorshevchuk.piper:piper-engine")
     implementation("dev.ihorshevchuk.piper:piper-utils")

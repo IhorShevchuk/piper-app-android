@@ -27,7 +27,7 @@ android {
 }
 
 dependencies {
-    // Module coordinates are substituted to the sibling piper-android repo's
+    // Module coordinates are substituted to the sibling piper-kotlin repo's
     // Gradle projects by the composite build in settings.gradle.kts.
     implementation("dev.ihorshevchuk.piper:piper-engine")
     implementation("dev.ihorshevchuk.piper:piper-utils")
