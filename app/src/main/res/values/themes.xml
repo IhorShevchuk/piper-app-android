@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Piper" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- 1:1 with the iOS accent color (system blue / link). -->
+    <style name="Theme.Piper" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:colorPrimary">@color/piper_accent</item>
+        <item name="android:colorAccent">@color/piper_accent</item>
+    </style>
 </resources>
