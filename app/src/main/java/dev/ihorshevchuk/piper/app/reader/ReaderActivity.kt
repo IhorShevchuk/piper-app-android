@@ -17,9 +17,7 @@ import android.widget.Spinner
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import dev.ihorshevchuk.piper.app.R
-import dev.ihorshevchuk.piper.engine.PiperCreateOptions
-import dev.ihorshevchuk.piper.engine.PiperEngine
-import dev.ihorshevchuk.piper.tts.EspeakDataInstaller
+import dev.ihorshevchuk.piper.tts.EngineCacheHolder
 import dev.ihorshevchuk.piper.tts.FileVoiceStore
 import dev.ihorshevchuk.piper.tts.VoiceInfo
 import dev.ihorshevchuk.piper.tts.VoicePrefs
@@ -51,17 +49,19 @@ class ReaderActivity : ComponentActivity() {
     private lateinit var statusView: TextView
 
     private val player = ReaderPlayer()
-    private var engine: PiperEngine? = null
     /**
-     * Guards [engine]/[engineVoiceName]: the engine is created once per
-     * voice and reused across Read taps (a fresh ONNX load costs ~7-10s on
-     * slow devices), instead of being rebuilt on every tap.
+     * Engines live in the process-wide [EngineCacheHolder] (warmed at app
+     * start for the active voice); this screen never creates or closes one
+     * directly. Switching voices just warms the newly selected voice.
      */
-    private val engineLock = Any()
-    private var engineVoiceName: String? = null
-    private var engineClosed = false
     private var isPlaying = false
     private var currentSpan: BackgroundColorSpan? = null
+    /**
+     * Name of the voice whose engine the reader currently pins via
+     * [EngineCache.acquire], or null when nothing is pinned. Released in
+     * [stopReading] (and therefore in [onDestroy]).
+     */
+    private var readerVoiceName: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -141,17 +141,14 @@ class ReaderActivity : ComponentActivity() {
 
         // Warm the engine off the tap path: opening the reader pays the
         // model load in the background, so the first Read starts instantly.
-        selectedVoice?.let { warmEngine(it) }
+        // (PiperApp already warms the active voice at app start; this
+        // covers a non-active preselected voice.)
+        selectedVoice?.let { EngineCacheHolder.get(this).warm(it) }
     }
 
     override fun onDestroy() {
         stopReading()
-        synchronized(engineLock) {
-            engineClosed = true
-            closeQuietly(engine)
-            engine = null
-            engineVoiceName = null
-        }
+        // The engine stays in the process-wide cache for the next visit.
         super.onDestroy()
     }
 
@@ -165,7 +162,13 @@ class ReaderActivity : ComponentActivity() {
         if (selected >= 0) voiceSpinner.setSelection(selected)
         voiceSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                selectedVoice = voices.getOrNull(position)
+                val newlySelected = voices.getOrNull(position)
+                if (newlySelected != null && newlySelected.name != selectedVoice?.name) {
+                    // Warm the newly picked voice off the tap path so the
+                    // first Read with it doesn't pay the model load.
+                    EngineCacheHolder.get(this@ReaderActivity).warm(newlySelected)
+                }
+                selectedVoice = newlySelected
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
@@ -207,9 +210,14 @@ class ReaderActivity : ComponentActivity() {
 
         Thread {
             try {
-                // Cached per voice: the first Read after opening the screen
-                // (or switching voices) pays the model load; repeat taps do not.
-                val eng = getEngine(voice)
+                // Shared cache: the first Read pays the model load (or the
+                // warm already did); repeat taps and revisits do not. Must
+                // stay off the main thread on a cold load. The engine is
+                // pinned for the whole reading so eviction cannot close it
+                // mid-synthesis; the pin is released in stopReading().
+                val eng = EngineCacheHolder.get(this@ReaderActivity)
+                    .acquire(voice)
+                readerVoiceName = voice.name
                 runOnUiThread { statusView.text = "" }
                 player.play(eng, text, speedPercent, 0, object : ReaderPlayer.Listener {
                     override fun onWord(range: MarkerRange?) = highlight(range)
@@ -233,9 +241,10 @@ class ReaderActivity : ComponentActivity() {
                 })
             } catch (e: Exception) {
                 Log.w(TAG, "reader failed", e)
-                // The cached engine is left alone: a synthesis failure is
-                // usually input-specific, and rebuilding costs ~7-10s.
-                // getEngine() only caches successfully created engines.
+                // The shared engine is left alone: a synthesis failure is
+                // usually input-specific, and the cache only holds
+                // successfully created engines. Unpin if we pinned.
+                releaseReaderEngine()
                 runOnUiThread {
                     isPlaying = false
                     refreshPlayButton()
@@ -253,8 +262,9 @@ class ReaderActivity : ComponentActivity() {
             player.stop()
         } catch (_: Exception) {
         }
-        // The engine stays cached for the next Read tap; it is closed on
-        // voice switch (in getEngine) or in onDestroy.
+        // Unpin the shared engine; the cache keeps it warm and evicts it
+        // only when idle.
+        releaseReaderEngine()
         runOnUiThread {
             clearHighlight()
             textInput.isEnabled = true
@@ -262,47 +272,14 @@ class ReaderActivity : ComponentActivity() {
         }
     }
 
-    private fun closeQuietly(eng: PiperEngine?) {
+    /** Releases the reader's [EngineCache.acquire] pin, once. */
+    private fun releaseReaderEngine() {
+        val name = readerVoiceName ?: return
+        readerVoiceName = null
         try {
-            eng?.close()
+            EngineCacheHolder.peek()?.release(name)
         } catch (_: Exception) {
         }
-    }
-
-    /**
-     * Returns the cached engine for [voice], creating it on first use.
-     * Switching voices closes the previous engine. Must not be called on
-     * the main thread: creation loads the ONNX model (~7-10s on slow
-     * devices).
-     */
-    private fun getEngine(voice: VoiceInfo): PiperEngine = synchronized(engineLock) {
-        check(!engineClosed) { "activity destroyed" }
-        val cached = engine
-        if (cached != null && engineVoiceName == voice.name) return cached
-        closeQuietly(cached)
-        val espeakDir = EspeakDataInstaller.ensure(this@ReaderActivity)
-        val created = PiperEngine(
-            PiperCreateOptions(
-                modelPath = voice.modelFile.absolutePath,
-                configPath = voice.configFile?.absolutePath,
-                espeakDataPath = espeakDir?.takeIf { it.isDirectory }?.absolutePath
-            ),
-            filesDir
-        )
-        engine = created
-        engineVoiceName = voice.name
-        created
-    }
-
-    /** Warms the engine in the background so the first Read tap is instant. */
-    private fun warmEngine(voice: VoiceInfo) {
-        Thread {
-            try {
-                getEngine(voice)
-            } catch (e: Exception) {
-                Log.w(TAG, "engine warm failed: ${voice.name}", e)
-            }
-        }.apply { isDaemon = true; start() }
     }
 
     /** Highlights [range] in the text; null clears the highlight. Main thread. */

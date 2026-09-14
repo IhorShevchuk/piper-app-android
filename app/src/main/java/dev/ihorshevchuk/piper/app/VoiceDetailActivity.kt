@@ -18,10 +18,8 @@ import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.FileProvider
-import dev.ihorshevchuk.piper.engine.PiperCreateOptions
-import dev.ihorshevchuk.piper.engine.PiperEngine
 import dev.ihorshevchuk.piper.player.PiperPlayer
-import dev.ihorshevchuk.piper.tts.EspeakDataInstaller
+import dev.ihorshevchuk.piper.tts.EngineCacheHolder
 import dev.ihorshevchuk.piper.tts.FileVoiceStore
 import dev.ihorshevchuk.piper.tts.VoiceInfo
 import dev.ihorshevchuk.piper.tts.VoicePrefs
@@ -46,15 +44,12 @@ class VoiceDetailActivity : Activity() {
 
     private val player = PiperPlayer()
 
-    @Volatile
-    private var engine: PiperEngine? = null
     /**
-     * Guards [engine]: one engine per voice-detail screen, created once and
-     * reused across Play taps. A fresh ONNX load costs ~7-10s on slow
-     * devices; rebuilding it per tap was the whole startup delay.
+     * Engines live in the process-wide [EngineCacheHolder]: the app warms
+     * the active voice at startup and this screen warms its voice on open,
+     * so the first Play tap usually hits an already-loaded model. This
+     * screen never closes the engine; the cache owns it (LRU eviction).
      */
-    private val engineLock = Any()
-    private var engineClosed = false
     private var previewThread: Thread? = null
     private var isPlaying = false
 
@@ -67,6 +62,14 @@ class VoiceDetailActivity : Activity() {
     private var previewGen = 0
 
     private var selectedSpeakerId = 0
+
+    /**
+     * True while the preview player holds the shared engine. The acquire is
+     * released in [stopPreview] (and therefore in [onDestroy]); a natural
+     * playback end without a stop keeps the pin until then, which only
+     * blocks eviction of this voice.
+     */
+    private var previewAcquired = false
 
     private lateinit var activeBadge: TextView
     private lateinit var sampleInput: EditText
@@ -112,16 +115,14 @@ class VoiceDetailActivity : Activity() {
 
         // Warm the engine off the tap path: opening the voice detail pays
         // the model load in the background, so the first Play starts fast.
-        warmEngine()
+        // (PiperApp already warms the active voice at app start; this
+        // covers opening a different voice straight from the list.)
+        EngineCacheHolder.get(this).warm(voice)
     }
 
     override fun onDestroy() {
         stopPreview()
-        synchronized(engineLock) {
-            engineClosed = true
-            closeQuietly(engine)
-            engine = null
-        }
+        // The engine stays in the process-wide cache for the next visit.
         super.onDestroy()
     }
 
@@ -228,41 +229,41 @@ class VoiceDetailActivity : Activity() {
         sampleInput.text.toString()
             .ifBlank { PreviewSamples.sampleTextFor(resources, voice.locale) }
 
-    private fun createEngine(): PiperEngine {
-        // First preview stages espeak-ng-data; later ones reuse it.
-        val espeakDir = EspeakDataInstaller.ensure(this)
-        return PiperEngine(
-            PiperCreateOptions(
-                modelPath = voice.modelFile.absolutePath,
-                configPath = voice.configFile?.absolutePath,
-                espeakDataPath = espeakDir?.takeIf { it.isDirectory }?.absolutePath
-            ),
-            filesDir
-        )
-    }
-
-    /**
-     * Returns the cached engine, creating it on first use. Must not be
-     * called on the main thread: creation loads the ONNX model (~7-10s on
-     * slow devices).
-     */
-    private fun getEngine(): PiperEngine = synchronized(engineLock) {
-        check(!engineClosed) { "activity destroyed" }
-        var eng = engine
-        if (eng == null) {
-            eng = createEngine()
-            engine = eng
-        }
-        eng
-    }
-
-    /** Warms the engine in the background so the first Play tap is instant. */
-    private fun warmEngine() {
+    private fun exportSample() {
+        stopPreview()
+        exportButton.isEnabled = false
+        statusView.text = getString(R.string.preview_loading)
+        val text = sampleText()
+        val speakerId = selectedSpeakerId
         Thread {
+            var acquired = false
             try {
-                getEngine()
+                // Shared cache: export reuses the warmed engine instead of
+                // paying a second model load. Pinned for the whole export so
+                // eviction cannot close it mid-synthesis.
+                val eng = EngineCacheHolder.get(this@VoiceDetailActivity)
+                    .acquire(voice)
+                acquired = true
+                val out = File(File(cacheDir, "exports").apply { mkdirs() },
+                    "${voice.name}-sample.wav")
+                val options = eng.defaultSynthesizeOptions().copy(speakerId = speakerId)
+                eng.synthesizeToFile(text, out.absolutePath, options)
+                runOnUiThread { shareExport(out) }
             } catch (e: Exception) {
-                Log.w(TAG, "engine warm failed: ${voice.name}", e)
+                Log.w(TAG, "export failed: ${voice.name}", e)
+                runOnUiThread {
+                    statusView.text = getString(R.string.export_error, e.message ?: "?")
+                }
+            } finally {
+                if (acquired) {
+                    EngineCacheHolder.peek()?.release(voice.name)
+                }
+                runOnUiThread {
+                    exportButton.isEnabled = true
+                    if (statusView.text == getString(R.string.preview_loading)) {
+                        statusView.text = ""
+                    }
+                }
             }
         }.apply { isDaemon = true; start() }
     }
@@ -281,17 +282,22 @@ class VoiceDetailActivity : Activity() {
         val speakerId = selectedSpeakerId
         val thread = Thread {
             try {
-                // Cached: the first Play after opening the screen pays the
-                // model load (or the warm already did); repeat taps do not.
-                val eng = getEngine()
+                // Shared cache: the first Play after opening the screen pays
+                // the model load (or the warm already did); repeat taps and
+                // revisits do not. Must stay off the main thread on a cold
+                // load. The engine is pinned for the whole playback so
+                // eviction cannot close it mid-synthesis; never close it.
+                val eng = EngineCacheHolder.get(this@VoiceDetailActivity)
+                    .acquire(voice)
                 if (gen != previewGen) {
-                    // Stopped while loading: the cached engine stays, just
-                    // don't start playback.
+                    // Stopped while loading: don't start playback, unpin.
+                    EngineCacheHolder.peek()?.release(voice.name)
                     return@Thread
                 }
+                previewAcquired = true
                 runOnUiThread { statusView.text = getString(R.string.preview_playing) }
-                // Async: the player owns its worker thread; the engine must
-                // stay open until onDestroy closes it.
+                // Async: the player owns its worker thread; the engine stays
+                // pinned until stopPreview() (or onDestroy) releases it.
                 player.play(eng, text, 1.0f, speakerId)
             } catch (e: InterruptedException) {
                 Thread.currentThread().interrupt()
@@ -317,7 +323,15 @@ class VoiceDetailActivity : Activity() {
             player.stop()
         } catch (_: Exception) {
         }
-        // The engine stays cached for the next Play tap; onDestroy closes it.
+        // Unpin the shared engine; the cache keeps it warm for the next
+        // visit and evicts it only when idle.
+        if (previewAcquired) {
+            previewAcquired = false
+            try {
+                EngineCacheHolder.peek()?.release(voice.name)
+            } catch (_: Exception) {
+            }
+        }
         if (isPlaying) {
             isPlaying = false
             runOnUiThread { resetPlayButton() }
@@ -327,38 +341,6 @@ class VoiceDetailActivity : Activity() {
     private fun resetPlayButton() {
         playButton.text = getString(R.string.play_sample)
         statusView.text = ""
-    }
-
-    private fun exportSample() {
-        stopPreview()
-        exportButton.isEnabled = false
-        statusView.text = getString(R.string.preview_loading)
-        val text = sampleText()
-        val speakerId = selectedSpeakerId
-        Thread {
-            var eng: PiperEngine? = null
-            try {
-                eng = createEngine()
-                val out = File(File(cacheDir, "exports").apply { mkdirs() },
-                    "${voice.name}-sample.wav")
-                val options = eng.defaultSynthesizeOptions().copy(speakerId = speakerId)
-                eng.synthesizeToFile(text, out.absolutePath, options)
-                runOnUiThread { shareExport(out) }
-            } catch (e: Exception) {
-                Log.w(TAG, "export failed: ${voice.name}", e)
-                runOnUiThread {
-                    statusView.text = getString(R.string.export_error, e.message ?: "?")
-                }
-            } finally {
-                closeQuietly(eng)
-                runOnUiThread {
-                    exportButton.isEnabled = true
-                    if (statusView.text == getString(R.string.preview_loading)) {
-                        statusView.text = ""
-                    }
-                }
-            }
-        }.apply { isDaemon = true; start() }
     }
 
     private fun shareExport(file: File) {
@@ -371,13 +353,6 @@ class VoiceDetailActivity : Activity() {
         }
         statusView.text = ""
         startActivity(Intent.createChooser(intent, getString(R.string.export_share_title)))
-    }
-
-    private fun closeQuietly(eng: PiperEngine?) {
-        try {
-            eng?.close()
-        } catch (_: Exception) {
-        }
     }
 
     // ------------------------------------------------------------------

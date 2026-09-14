@@ -227,12 +227,15 @@ class PiperTtsService : TextToSpeechService() {
                 configPath = voice.configFile?.absolutePath,
                 espeakDataPath = espeakDataDir?.takeIf { it.isDirectory }?.absolutePath
             )
+            val loadStartMs = android.os.SystemClock.elapsedRealtime()
             PiperEngine(options, filesDir).also {
+                val loadMs = android.os.SystemClock.elapsedRealtime() - loadStartMs
                 engine = it
                 loadedVoiceName = voice.name
                 loadedSampleRate = VoiceSampleRate.fromConfig(voice.configFile)
                 currentLocale = voice.locale
-                Log.i(TAG, "loaded voice ${voice.name} (native ${PiperEngine.version()})")
+                Log.i(TAG, "loaded voice ${voice.name} in ${loadMs}ms " +
+                    "(native ${PiperEngine.version()})")
             }
         } catch (e: Exception) {
             Log.e(TAG, "failed to load voice ${voice.name}", e)
