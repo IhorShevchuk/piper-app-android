@@ -196,7 +196,7 @@ class VoiceDetailActivity : Activity() {
         sampleInput = EditText(this).apply {
             hint = getString(R.string.sample_text_hint)
             minLines = 3
-            setText(PreviewSamples.sampleTextFor(resources, voice.locale.language))
+            setText(PreviewSamples.sampleTextFor(resources, voice.locale))
             setPadding(0, dp(8), 0, 0)
         }
         root.addView(sampleInput,
@@ -210,7 +210,7 @@ class VoiceDetailActivity : Activity() {
 
     private fun sampleText(): String =
         sampleInput.text.toString()
-            .ifBlank { PreviewSamples.sampleTextFor(resources, voice.locale.language) }
+            .ifBlank { PreviewSamples.sampleTextFor(resources, voice.locale) }
 
     private fun createEngine(): PiperEngine {
         // First preview stages espeak-ng-data; later ones reuse it.

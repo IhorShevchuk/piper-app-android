@@ -59,15 +59,7 @@
     <string name="voice_size_mb">%1$.1f MB</string>
     <string name="voice_size_unknown">size unknown</string>
 
-    <!-- Spoken preview lines, one per language family. Heard, not shown. -->
+    <!-- Fallback spoken preview line. Heard, not shown. Per-voice lines come
+         from assets/samples.json (same file the iOS app uses). -->
     <string name="preview_sample_default">Hello. This is a preview of this voice.</string>
-    <string name="preview_sample_uk">Добрий день. Це попередній перегляд цього голосу.</string>
-    <string name="preview_sample_de">Hallo. Dies ist eine Vorschau dieser Stimme.</string>
-    <string name="preview_sample_fr">Bonjour. Ceci est un aperçu de cette voix.</string>
-    <string name="preview_sample_es">Hola. Esta es una vista previa de esta voz.</string>
-    <string name="preview_sample_pt">Olá. Esta é uma prévia desta voz.</string>
-    <string name="preview_sample_it">Ciao. Questa è un\'anteprima di questa voce.</string>
-    <string name="preview_sample_ru">Здравствуйте. Это предварительный просмотр этого голоса.</string>
-    <string name="preview_sample_zh">你好。这是此语音的预览。</string>
-    <string name="preview_sample_ar">مرحباً. هذه معاينة لهذا الصوت.</string>
 </resources>
