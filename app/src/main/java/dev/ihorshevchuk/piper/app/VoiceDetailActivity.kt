@@ -48,13 +48,20 @@ class VoiceDetailActivity : Activity() {
 
     @Volatile
     private var engine: PiperEngine? = null
+    /**
+     * Guards [engine]: one engine per voice-detail screen, created once and
+     * reused across Play taps. A fresh ONNX load costs ~7-10s on slow
+     * devices; rebuilding it per tap was the whole startup delay.
+     */
+    private val engineLock = Any()
+    private var engineClosed = false
     private var previewThread: Thread? = null
     private var isPlaying = false
 
     /**
-     * Bumped on every play/stop; the loader thread only keeps its engine
-     * when its generation is still current, so a stop racing the load
-     * cannot leak the engine.
+     * Bumped on every play/stop; the loader thread only starts playback
+     * when its generation is still current, so a stop racing the engine
+     * load cannot start unwanted audio. The engine itself stays cached.
      */
     @Volatile
     private var previewGen = 0
@@ -102,10 +109,19 @@ class VoiceDetailActivity : Activity() {
 
         setContentView(ScrollView(this).apply { addView(root) })
         refreshActiveState()
+
+        // Warm the engine off the tap path: opening the voice detail pays
+        // the model load in the background, so the first Play starts fast.
+        warmEngine()
     }
 
     override fun onDestroy() {
         stopPreview()
+        synchronized(engineLock) {
+            engineClosed = true
+            closeQuietly(engine)
+            engine = null
+        }
         super.onDestroy()
     }
 
@@ -225,6 +241,32 @@ class VoiceDetailActivity : Activity() {
         )
     }
 
+    /**
+     * Returns the cached engine, creating it on first use. Must not be
+     * called on the main thread: creation loads the ONNX model (~7-10s on
+     * slow devices).
+     */
+    private fun getEngine(): PiperEngine = synchronized(engineLock) {
+        check(!engineClosed) { "activity destroyed" }
+        var eng = engine
+        if (eng == null) {
+            eng = createEngine()
+            engine = eng
+        }
+        eng
+    }
+
+    /** Warms the engine in the background so the first Play tap is instant. */
+    private fun warmEngine() {
+        Thread {
+            try {
+                getEngine()
+            } catch (e: Exception) {
+                Log.w(TAG, "engine warm failed: ${voice.name}", e)
+            }
+        }.apply { isDaemon = true; start() }
+    }
+
     private fun togglePreview() {
         if (isPlaying) {
             stopPreview()
@@ -238,26 +280,23 @@ class VoiceDetailActivity : Activity() {
         val text = sampleText()
         val speakerId = selectedSpeakerId
         val thread = Thread {
-            var eng: PiperEngine? = null
             try {
-                eng = createEngine()
-                if (gen == previewGen) {
-                    engine = eng
-                } else {
-                    // Stopped while loading: drop the engine immediately.
-                    closeQuietly(eng)
+                // Cached: the first Play after opening the screen pays the
+                // model load (or the warm already did); repeat taps do not.
+                val eng = getEngine()
+                if (gen != previewGen) {
+                    // Stopped while loading: the cached engine stays, just
+                    // don't start playback.
                     return@Thread
                 }
                 runOnUiThread { statusView.text = getString(R.string.preview_playing) }
                 // Async: the player owns its worker thread; the engine must
-                // stay open until stopPreview() closes it.
+                // stay open until onDestroy closes it.
                 player.play(eng, text, 1.0f, speakerId)
             } catch (e: InterruptedException) {
                 Thread.currentThread().interrupt()
-                closeQuietly(eng)
             } catch (e: Exception) {
                 Log.w(TAG, "preview failed: ${voice.name}", e)
-                closeQuietly(eng)
                 runOnUiThread {
                     isPlaying = false
                     statusView.text = getString(R.string.preview_error, e.message ?: "?")
@@ -278,8 +317,7 @@ class VoiceDetailActivity : Activity() {
             player.stop()
         } catch (_: Exception) {
         }
-        closeQuietly(engine)
-        engine = null
+        // The engine stays cached for the next Play tap; onDestroy closes it.
         if (isPlaying) {
             isPlaying = false
             runOnUiThread { resetPlayButton() }

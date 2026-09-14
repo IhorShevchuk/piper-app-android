@@ -8,6 +8,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import dev.ihorshevchuk.piper.engine.PiperEngine
+import dev.ihorshevchuk.piper.utils.AudioChunkQueue
 import dev.ihorshevchuk.piper.utils.MarkerRange
 import dev.ihorshevchuk.piper.utils.SpeechMarker
 import dev.ihorshevchuk.piper.utils.SpeedCurve
@@ -39,6 +40,8 @@ class ReaderPlayer {
 
     private val stopped = AtomicBoolean(false)
     private val worker = AtomicReference<java.util.concurrent.ExecutorService?>()
+    private val synthProducer = AtomicReference<Thread?>()
+    private val chunkQueue = AtomicReference<AudioChunkQueue?>()
     private val mainHandler = Handler(Looper.getMainLooper())
 
     @Volatile
@@ -77,26 +80,65 @@ class ReaderPlayer {
         worker.set(exec)
         exec.execute {
             var highlightTask: Runnable? = null
-            try {
-                val options = engine.defaultSynthesizeOptions().copy(
-                    lengthScale = SpeedCurve.lengthScaleForAndroidSpeechRate(speedPercent),
-                    speakerId = speakerId
-                )
-                highlightTask = startHighlightLoop(listener)
-                engine.synthesize(
-                    text,
-                    options,
-                    onSamples = { samples ->
-                        if (stopped.get()) return@synthesize
-                        writeSamples(engine, samples)
-                    },
-                    onMarkers = { batch ->
-                        synchronized(markers) {
-                            markers.addAll(batch)
-                            tracker = WordTracker(markers.toList())
+            // Sentence lookahead: the synthesizer thread (producer) offers
+            // PCM chunks into a bounded queue while this worker (consumer)
+            // drains it into the AudioTrack, so the next sentence's
+            // piper_synthesize_start overlaps the current sentence's audio
+            // instead of gating it (no gap at sentence boundaries).
+            val queue = AudioChunkQueue()
+            chunkQueue.set(queue)
+            // Created unstarted: the reference must be visible before the
+            // thread's first synthProducer.get() check, or it would exit
+            // immediately thinking it was superseded.
+            val producer = Thread {
+                val self = Thread.currentThread()
+                try {
+                    val options = engine.defaultSynthesizeOptions().copy(
+                        lengthScale = SpeedCurve.lengthScaleForAndroidSpeechRate(speedPercent),
+                        speakerId = speakerId
+                    )
+                    engine.synthesize(
+                        text,
+                        options,
+                        onSamples = { samples ->
+                            if (stopped.get() || synthProducer.get() !== self) return@synthesize
+                            if (!queue.offer(AudioChunkQueue.Chunk(samples))) return@synthesize
+                        },
+                        onMarkers = { batch ->
+                            synchronized(markers) {
+                                markers.addAll(batch)
+                                tracker = WordTracker(markers.toList())
+                            }
                         }
+                    )
+                } catch (e: InterruptedException) {
+                    Thread.currentThread().interrupt()
+                } catch (e: Exception) {
+                    if (!stopped.get()) {
+                        Log.e(TAG, "reader playback failed", e)
+                        mainHandler.post { listener.onError(e) }
                     }
-                )
+                } finally {
+                    queue.finish()
+                    synthProducer.compareAndSet(self, null)
+                }
+            }
+            producer.isDaemon = true
+            producer.name = "piper-reader-synth"
+            synthProducer.set(producer)
+            producer.start()
+            try {
+                highlightTask = startHighlightLoop(listener)
+                while (true) {
+                    if (stopped.get()) break
+                    val chunk = try {
+                        queue.take()
+                    } catch (e: InterruptedException) {
+                        Thread.currentThread().interrupt()
+                        break
+                    } ?: break
+                    writeSamples(engine, chunk.samples)
+                }
             } catch (e: InterruptedException) {
                 Thread.currentThread().interrupt()
             } catch (e: Exception) {
@@ -106,6 +148,13 @@ class ReaderPlayer {
                 }
             } finally {
                 synthDone = true
+                queue.abort()
+                try {
+                    producer.join(10_000)
+                } catch (e: InterruptedException) {
+                    Thread.currentThread().interrupt()
+                }
+                chunkQueue.compareAndSet(queue, null)
                 // The highlight loop keeps polling until the buffered audio
                 // drains, then finishes itself. On stop() it is removed.
                 if (stopped.get()) {
@@ -118,6 +167,8 @@ class ReaderPlayer {
 
     fun stop() {
         stopped.set(true)
+        chunkQueue.getAndSet(null)?.abort()
+        synthProducer.getAndSet(null)?.interrupt()
         worker.getAndSet(null)?.shutdownNow()
         mainHandler.post {
             releaseTrack()
