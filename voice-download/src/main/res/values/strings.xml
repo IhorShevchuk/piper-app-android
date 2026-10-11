@@ -28,6 +28,17 @@
     <string name="voice_cd_delete">Delete %1$s</string>
     <string name="voice_cd_preview">Preview %1$s</string>
     <string name="voice_cd_set_active">Set %1$s as the active voice</string>
+    <string name="voice_action_play_sample">Play sample</string>
+    <string name="voice_action_stop_sample">Stop</string>
+    <!-- %1$s = voice name -->
+    <string name="voice_cd_play_sample">Play sample of %1$s</string>
+    <!-- %1$s = voice name -->
+    <string name="voice_cd_stop_sample">Stop sample of %1$s</string>
+    <string name="voice_sample_loading">Loading sample…</string>
+    <!-- %1$s = voice name -->
+    <string name="voice_sample_playing">Playing sample of %1$s</string>
+    <!-- %1$s = error message; announced -->
+    <string name="voice_sample_error_announcement">Sample failed: %1$s</string>
     <!-- %1$s = voice name, %2$d = percent -->
     <string name="voice_cd_downloading">Downloading %1$s, %2$d percent</string>
 

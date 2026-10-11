@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.media.MediaPlayer
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -42,9 +43,11 @@ import java.util.Locale
  *
  * Rows mirror the iOS voice rows: download with a circular progress
  * ring that IS the cancel control (tap it to cancel, PR #71), delete,
- * set-active, preview (installed voices synthesize the sample locally;
- * a not-installed row is action-only - its tap does nothing, while an
- * installed row's tap opens the voice detail in `:app` through
+ * set-active, preview (installed voices synthesize the sample locally),
+ * and Play sample on not-installed rows, which streams the hosted
+ * sample.mp3 (community sample as fallback, as on iOS) so a voice can
+ * be heard before installing. A not-installed row's tap does nothing,
+ * while an installed row's tap opens the voice detail in `:app` through
  * [VoiceListContract.ACTION_VOICE_DETAIL]), and a license line when
  * the catalog provides one (PR #62). Row sizes follow the Voice format
  * setting, read when the list binds.
@@ -83,6 +86,12 @@ class VoiceListActivity : Activity() {
     private var previewEngine: PiperEngine? = null
     private var previewThread: Thread? = null
 
+    // Streamed sample playback for not-installed voices (iOS parity).
+    private var samplePlayer: MediaPlayer? = null
+    private var sampleKey: String? = null
+    private var sampleState: RowSampleState = RowSampleState.IDLE
+    private var sampleFallbackTried: Boolean = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -110,6 +119,7 @@ class VoiceListActivity : Activity() {
     }
 
     override fun onDestroy() {
+        stopSample()
         stopPreview()
         super.onDestroy()
     }
@@ -145,6 +155,7 @@ class VoiceListActivity : Activity() {
             onDelete = ::confirmDelete,
             onPreview = ::preview,
             onSetActive = ::setActive,
+            onSampleClick = ::toggleSample,
             onRowClick = ::openRow
         )
         recycler = RecyclerView(this).apply {
@@ -278,7 +289,9 @@ class VoiceListActivity : Activity() {
                 displaySizeBytes = entry.effectiveTotalSizeBytes(format),
                 downloadState = overlay?.state ?: RowDownloadState.IDLE,
                 progressPercent = overlay?.percent ?: 0,
-                errorMessage = overlay?.error
+                errorMessage = overlay?.error,
+                sampleState = if (entry.key == sampleKey) sampleState
+                    else RowSampleState.IDLE
             )
         })
         val empty = filtered.isEmpty() && allEntries.isNotEmpty()
@@ -406,10 +419,100 @@ class VoiceListActivity : Activity() {
     }
 
     // ------------------------------------------------------------------
+    // Streamed samples for not-installed voices (iOS VoiceItemView)
+    // ------------------------------------------------------------------
+
+    /** Play sample toggles: tapping the playing row's Stop ends it. */
+    private fun toggleSample(entry: VoiceCatalogEntry) {
+        if (sampleKey == entry.key && sampleState != RowSampleState.IDLE) {
+            stopSample()
+            applyFilter()
+        } else {
+            playSample(entry)
+        }
+    }
+
+    private fun playSample(entry: VoiceCatalogEntry) {
+        stopPreview()
+        stopSample()
+        sampleKey = entry.key
+        sampleState = RowSampleState.LOADING
+        sampleFallbackTried = false
+        statusView.text = getString(R.string.voice_sample_loading)
+        applyFilter()
+        startSamplePlayer(entry, entry.sampleUrl)
+    }
+
+    private fun startSamplePlayer(entry: VoiceCatalogEntry, url: String) {
+        val mp = MediaPlayer()
+        samplePlayer = mp
+        try {
+            mp.setDataSource(url)
+        } catch (e: Exception) {
+            onSampleError(entry, e.message ?: "cannot open sample")
+            return
+        }
+        mp.setOnPreparedListener { player ->
+            if (sampleKey != entry.key) return@setOnPreparedListener
+            sampleState = RowSampleState.PLAYING
+            statusView.text =
+                getString(R.string.voice_sample_playing, entry.displayName)
+            adapter.updateRow(entry.key) { it.copy(sampleState = sampleState) }
+            player.start()
+        }
+        mp.setOnCompletionListener {
+            if (sampleKey == entry.key) {
+                stopSample()
+                applyFilter()
+            }
+        }
+        mp.setOnErrorListener { _, what, extra ->
+            Log.w(TAG, "sample failed for ${entry.key}: what=$what extra=$extra")
+            onSampleError(entry, "media error $what/$extra")
+            true
+        }
+        mp.prepareAsync()
+    }
+
+    private fun onSampleError(entry: VoiceCatalogEntry, message: String) {
+        if (sampleKey != entry.key) return
+        // Our hosted sample may be missing; retry once with the community
+        // sample (iOS handleSampleFailure).
+        if (!sampleFallbackTried) {
+            sampleFallbackTried = true
+            releaseSamplePlayer()
+            startSamplePlayer(entry, entry.fallbackSampleUrl)
+            return
+        }
+        stopSample()
+        applyFilter()
+        val msg = getString(R.string.voice_sample_error_announcement, message)
+        root.announceForAccessibility(msg)
+    }
+
+    private fun stopSample() {
+        releaseSamplePlayer()
+        sampleKey = null
+        sampleState = RowSampleState.IDLE
+        sampleFallbackTried = false
+    }
+
+    private fun releaseSamplePlayer() {
+        val mp = samplePlayer ?: return
+        samplePlayer = null
+        try {
+            mp.stop()
+        } catch (_: Exception) {
+        }
+        mp.release()
+    }
+
+    // ------------------------------------------------------------------
     // Preview through :piper-player
     // ------------------------------------------------------------------
 
     private fun preview(entry: VoiceCatalogEntry) {
+        stopSample()
         stopPreview()
         val model = File(voicesDir, entry.modelFileName)
         if (!model.isFile) {

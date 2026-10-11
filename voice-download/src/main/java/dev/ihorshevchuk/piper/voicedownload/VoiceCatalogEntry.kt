@@ -92,4 +92,24 @@ data class VoiceCatalogEntry(
     /** Combined download size under [format] (config is shared by both). */
     fun effectiveTotalSizeBytes(format: VoiceFormat): Long =
         effectiveOnnxSizeBytes(format) + configSizeBytes
+
+    /**
+     * Hosted sample audio for listening before installing (iOS
+     * `VoiceLoader.sampleURL`): `sample.mp3` in the same catalog
+     * directory as the model file.
+     */
+    val sampleUrl: String
+        get() = onnxUrl.substringBeforeLast("/") + "/sample.mp3"
+
+    /**
+     * Community sample (rhasspy piper-samples), used when the hosted
+     * sample is missing - iOS `VoiceLoader.fallbackSampleURL`.
+     */
+    val fallbackSampleUrl: String
+        get() {
+            val code = canonicalLanguageCode
+            val family = code.substringBefore("_")
+            return "https://rhasspy.github.io/piper-samples/samples/" +
+                "$family/$code/$displayName/$quality/speaker_0.mp3"
+        }
 }
