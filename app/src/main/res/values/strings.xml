@@ -2,11 +2,27 @@
 <resources>
     <string name="app_name">Piper</string>
 
-    <!-- Main screen (iOS MainView) -->
+    <!-- Main screen (iOS MainView, unified list) -->
     <string name="installed_voices">Installed Voices</string>
-    <string name="no_voices_message">No voices are installed yet.\nUse the Download Voice Model button below to add a voice.</string>
-    <string name="download_voice_model">Download Voice Model</string>
+    <string name="installed_languages">Installed languages</string>
+    <string name="all_languages">All Languages</string>
+    <!-- %1$d = number of installed voices in the language; VoiceOver-style
+         full label for an installed-language row -->
+    <string name="installed_count_format">Installed voices: %1$d</string>
+    <string name="no_voices_message">No voices are installed yet.\nChoose a language below to add a voice.</string>
+    <string name="loading_voices">Loading voices</string>
+    <string name="catalog_load_failed">Couldn\'t load the voice catalog.</string>
+    <string name="retry">Retry</string>
+    <string name="search_voices">Search voices</string>
     <string name="update_model_in_app">Import Model from Files</string>
+
+    <!-- Settings (iOS SettingsView; replaces the old About screen) -->
+    <string name="settings">Settings</string>
+    <string name="voice_format">Voice format</string>
+    <string name="voice_format_standard">Standard (FP16)</string>
+    <string name="voice_format_compact">Compact (INT8)</string>
+    <string name="voice_format_description">Applies to new downloads. Installed voices keep their format. Compact voices are smaller and use less memory, with slightly reduced quality.</string>
+    <string name="voice_licenses">Voice Licenses</string>
 
     <!-- Voice detail (iOS VoiceView) -->
     <string name="voice_information">Voice Information</string>
@@ -16,6 +32,11 @@
     <string name="info_version">Version</string>
     <string name="info_quality">Quality</string>
     <string name="info_sample_rate">Sample Rate</string>
+    <!-- Per-voice licenses (iOS PR #62) -->
+    <string name="voice_license">License</string>
+    <string name="model_license">Model License</string>
+    <string name="training_data">Training Data</string>
+    <string name="license_unknown">Unknown</string>
     <string name="play_sample">Play Sample</string>
     <string name="stop">Stop</string>
     <string name="export_file">Export File</string>
@@ -53,16 +74,17 @@
 
     <!-- Help (iOS HelpView, lines 2-3 adapted for Android) -->
     <string name="help_title">Help</string>
-    <string name="help_line_1">Install a voice from the Download Voice Model menu to start using the app.</string>
+    <string name="help_line_1">Install a voice to start using the app: tap a language under All Languages, then tap the download button next to a voice.</string>
     <string name="help_line_2">Go to Settings → System → Languages &amp; input → Text-to-speech output.</string>
     <string name="help_line_3">Select Piper as your preferred TTS engine.</string>
     <string name="help_line_4">Use Search if the voice does not appear in the list.</string>
-    <string name="help_line_5">Custom voices can be installed using Import Model from Files by selecting a .onnx model and its .json configuration.</string>
+    <string name="help_line_5">Custom voices can be installed in Settings using Import Model from Files by selecting a .onnx model and its .json configuration.</string>
+    <string name="help_line_6">To save space, set Voice format to Compact in Settings: new voice downloads will be smaller and use less memory.</string>
+    <string name="help_line_7">Use Search at the top of the main screen to find a voice by name or language. Tap the progress ring to cancel a download in progress.</string>
     <string name="open_tts_settings">Open TTS Settings</string>
     <string name="tts_settings_unavailable">System TTS settings are not available on this device.</string>
 
-    <!-- About (iOS AboutAppView) -->
-    <string name="about_app">About the App</string>
+    <!-- Settings content kept from the old About screen -->
     <string name="credits_and_legal">Credits &amp; Legal</string>
     <string name="license_piper_title">Piper1-GPL</string>
     <string name="license_piper_description">Piper is a fast, open-source neural text-to-speech engine developed by the OHF-Voice community.</string>
@@ -94,5 +116,5 @@
 
     <!-- Menus -->
     <string name="menu_help">Help</string>
-    <string name="menu_about">About the App</string>
+    <string name="menu_settings">Settings</string>
 </resources>

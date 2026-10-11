@@ -19,7 +19,14 @@
         <activity
             android:name=".VoiceDetailActivity"
             android:exported="false"
-            android:label="@string/voice_information" />
+            android:label="@string/voice_information">
+            <!-- Launched from :voice-download rows via the
+                 VoiceListContract.ACTION_VOICE_DETAIL intent action. -->
+            <intent-filter>
+                <action android:name="dev.ihorshevchuk.piper.app.action.VOICE_DETAIL" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".ImportVoiceActivity"
             android:exported="false"
@@ -29,9 +36,13 @@
             android:exported="false"
             android:label="@string/help_title" />
         <activity
-            android:name=".AboutActivity"
+            android:name=".SettingsActivity"
             android:exported="false"
-            android:label="@string/about_app" />
+            android:label="@string/settings" />
+        <activity
+            android:name=".VoiceLicensesActivity"
+            android:exported="false"
+            android:label="@string/voice_licenses" />
         <activity
             android:name=".reader.ReaderActivity"
             android:exported="false"

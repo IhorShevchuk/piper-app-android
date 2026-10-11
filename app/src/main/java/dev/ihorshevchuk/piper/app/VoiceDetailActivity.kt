@@ -82,6 +82,9 @@ class VoiceDetailActivity : Activity() {
         super.onCreate(savedInstanceState)
 
         val name = intent.getStringExtra(EXTRA_VOICE_NAME)
+            ?: intent.getStringExtra(
+                dev.ihorshevchuk.piper.tts.VoiceListContract.EXTRA_VOICE_NAME
+            )
         val voicesDir = File(filesDir, FileVoiceStore.VOICES_DIR_NAME)
         val found = name?.let { FileVoiceStore(voicesDir).findVoice(it) }
         if (found == null) {
@@ -106,6 +109,7 @@ class VoiceDetailActivity : Activity() {
         }
 
         addInfoSection(root)
+        addLicenseSection(root)
         addSampleSection(root)
         addActiveSection(root)
         addRemoveSection(root)
@@ -156,6 +160,50 @@ class VoiceDetailActivity : Activity() {
             text = getString(labelRes) + ": " + value
             setPadding(0, dp(2), 0, dp(2))
         })
+    }
+
+    // ------------------------------------------------------------------
+    // Per-voice license rows (iOS PR #62, VoiceView follow-up)
+    // ------------------------------------------------------------------
+
+    /**
+     * License rows for this voice, matched to its catalog entry by key:
+     * the headline License (the catalog's `license` field, already the
+     * most restrictive of model vs training data), then Model License
+     * and Training Data when the catalog separates them. Imported
+     * voices match no catalog entry and show nothing extra. The
+     * catalog is fetched off the main thread (it serves its disk cache
+     * offline) and the rows are added when it arrives.
+     */
+    private fun addLicenseSection(root: LinearLayout) {
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+        root.addView(container)
+        Thread {
+            val entry = try {
+                manager.fetchCatalog().firstOrNull { it.key == voice.name }
+            } catch (e: Exception) {
+                Log.w(TAG, "catalog load for license rows failed", e)
+                null
+            } ?: return@Thread
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                entry.license?.let {
+                    infoRow(container, R.string.voice_license, it)
+                }
+                entry.modelLicense?.let {
+                    infoRow(container, R.string.model_license, it)
+                }
+                entry.trainingData?.let { training ->
+                    val licenseText = training.license
+                        ?: getString(R.string.license_unknown)
+                    val url = training.url?.takeIf { u -> u.isNotEmpty() }
+                    infoRow(container, R.string.training_data,
+                        if (url != null) "$licenseText ($url)" else licenseText)
+                }
+            }
+        }.apply { isDaemon = true; start() }
     }
 
     // ------------------------------------------------------------------
