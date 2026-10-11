@@ -4,7 +4,7 @@ package dev.ihorshevchuk.piper.voicedownload
  * Where a voice catalog lives: the voices.json URL and the base URL that
  * file paths inside it resolve against.
  *
- * DEFAULT points at Ihor's fp16-quantized catalog (1:1 with the iOS app),
+ * DEFAULT points at Ihor's fp16-quantized catalog,
  * not the upstream full-size one.
  */
 data class VoiceCatalogSource(

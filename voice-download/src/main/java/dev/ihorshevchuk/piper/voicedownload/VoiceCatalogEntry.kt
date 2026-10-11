@@ -2,7 +2,7 @@ package dev.ihorshevchuk.piper.voicedownload
 
 /**
  * Training-data provenance of a catalog voice, from its MODEL_CARD.
- * Android twin of the iOS `TrainingData` struct. Every field is nullable,
+ * Every field is nullable,
  * so a partially-filled `training_data` object can never break parsing.
  */
 data class TrainingData(
@@ -30,8 +30,8 @@ data class VoiceVariant(
  * naming. URLs are absolute; sizes and MD5 digests come from the catalog
  * (null when the catalog omits them).
  *
- * The license / training-data / variant fields are catalog enrichment
- * (iOS PR #62 / #76): optional, and absent on entries written before
+ * The license / training-data / variant fields are catalog enrichment:
+ * optional, and absent on entries written before
  * they were added - parsing and behaviour are unchanged for those.
  */
 data class VoiceCatalogEntry(
@@ -69,7 +69,7 @@ data class VoiceCatalogEntry(
     /** Canonical catalog language code, e.g. "en_GB" for "en-gb-x-rp". */
     val canonicalLanguageCode: String get() = LanguageCodes.canonical(languageCode)
 
-    /** True when [format] selects the INT8 build for this voice (iOS `compactSelected`). */
+    /** True when [format] selects the INT8 build for this voice. */
     fun isCompactSelected(format: VoiceFormat): Boolean =
         format == VoiceFormat.COMPACT && int8Variant != null
 
@@ -84,7 +84,7 @@ data class VoiceCatalogEntry(
     /**
      * MD5 to verify the model download against, or null to skip the MD5
      * check: the catalog serves no digest for variants (size check only
-     * for INT8, same as iOS).
+     * for INT8).
      */
     fun effectiveOnnxMd5(format: VoiceFormat): String? =
         if (isCompactSelected(format)) null else onnxMd5
@@ -94,16 +94,15 @@ data class VoiceCatalogEntry(
         effectiveOnnxSizeBytes(format) + configSizeBytes
 
     /**
-     * Hosted sample audio for listening before installing (iOS
-     * `VoiceLoader.sampleURL`): `sample.mp3` in the same catalog
-     * directory as the model file.
+     * Hosted sample audio for listening before installing:
+     * `sample.mp3` in the same catalog directory as the model file.
      */
     val sampleUrl: String
         get() = onnxUrl.substringBeforeLast("/") + "/sample.mp3"
 
     /**
      * Community sample (rhasspy piper-samples), used when the hosted
-     * sample is missing - iOS `VoiceLoader.fallbackSampleURL`.
+     * sample is missing.
      */
     val fallbackSampleUrl: String
         get() {

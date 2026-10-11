@@ -20,12 +20,12 @@ import java.util.concurrent.Future
  * Threading: one background serial executor for all downloads; [Listener]
  * callbacks are posted to the main thread.
  *
- * Download state is session-scoped (iOS PR #72): every attempt gets a
+ * Download state is session-scoped: every attempt gets a
  * token from [DownloadSessions], and progress / completion / error
  * delivery plus cleanup are token-gated, so a cancelled download and
  * its immediate replacement cannot corrupt each other. A cancelled
- * session ends silently - cancelling is not an error (iOS logs it at
- * debug level and the row returns to the download state).
+ * session ends silently - cancelling is not an error (the row
+ * returns to the download state).
  *
  * Coexistence with [dev.ihorshevchuk.piper.tts.PiperTtsService] (same
  * process, same filesDir):
@@ -90,8 +90,8 @@ class VoiceDownloadManager(
      * Starts downloading [entry]'s model + config in the format chosen
      * in Settings ([VoiceFormatStore.current], read once at start;
      * installed voices keep their format). The model is always stored
-     * under the fixed name `<key>.onnx`, whichever build was fetched
-     * (same as iOS). Returns false (and calls nothing) when the voice
+     * under the fixed name `<key>.onnx`, whichever build was fetched.
+     * Returns false (and calls nothing) when the voice
      * is already installed or already downloading.
      */
     fun download(entry: VoiceCatalogEntry, listener: Listener?): Boolean {
@@ -184,7 +184,7 @@ class VoiceDownloadManager(
     ) {
         // A cancel that landed between the config and model files (or
         // before the task even started) stops the session here: the
-        // cancelled set is checked before each file, like iOS.
+        // cancelled set is checked before each file.
         if (sessions.isCancelled(token)) throw InterruptedIOException("cancelled")
 
         val total = entry.effectiveTotalSizeBytes(format)

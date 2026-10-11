@@ -26,8 +26,7 @@ import java.io.File
 import java.util.Locale
 
 /**
- * App home screen: the unified voice list, mirroring the iOS MainView
- * (PR #66/#68/#78).
+ * App home screen: the unified voice list.
  *
  * - A Search field at the top: flat voice results across all languages
  *   (each row shows its language); tapping an installed result opens its
@@ -35,14 +34,14 @@ import java.util.Locale
  *   where the download action lives.
  * - "Installed languages": one row per language with installed voices -
  *   the visual label is the language name plus just the count, the
- *   accessibility label is "<language>, Installed voices: N" (iOS #70).
+ *   accessibility label is "<language>, Installed voices: N".
  *   Tapping opens that language's voices screen, resolved through
  *   [LanguageCodes.resolve] so a community config code like
- *   "en-gb-x-rp" still lands on the catalog's "en_GB" (iOS #69).
+ *   "en-gb-x-rp" still lands on the catalog's "en_GB".
  * - "All Languages": one row per catalog language (Japanese excluded),
  *   tapping opens the same per-language voices screen.
  * - Toolbar carries only Help and Settings (Import Model from Files
- *   moved into Settings, iOS #79).
+ *   lives in Settings).
  *
  * Android-only: the Reader entry point stays, as a button under the
  * sections. Plain Views on purpose - no Compose for the app shell.
@@ -160,7 +159,7 @@ class MainActivity : ComponentActivity() {
         }.apply { isDaemon = true; start() }
     }
 
-    /** Installed voices grouped by canonical config language code (iOS grouping). */
+    /** Installed voices grouped by canonical config language code. */
     private fun installedGroups(): List<Pair<String, List<VoiceInfo>>> {
         val byLanguage = LinkedHashMap<String, MutableList<VoiceInfo>>()
         for (voice in installedVoices) {
@@ -216,7 +215,7 @@ class MainActivity : ComponentActivity() {
             content.addView(rowView(
                 visualText = "$name   $count",
                 // Sighted users see just the number; accessibility keeps
-                // the full "Installed voices: N" (iOS #70).
+                // the full "Installed voices: N".
                 accessibilityText = "$name, " +
                     getString(R.string.installed_count_format, count),
                 onClick = {
@@ -309,9 +308,9 @@ class MainActivity : ComponentActivity() {
                                 .putExtra(VoiceDetailActivity.EXTRA_VOICE_NAME, entry.key)
                         )
                     } else {
-                        // Action-only on iOS v1: the row itself does not
-                        // navigate; send the user to the language screen
-                        // where the download action lives.
+                        // The row itself does not navigate; send the user
+                        // to the language screen where the download
+                        // action lives.
                         startActivity(
                             Intent(this@MainActivity, VoiceListActivity::class.java)
                                 .putExtra(

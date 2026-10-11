@@ -4,7 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
- * Sample URL derivation for listen-before-install (iOS VoiceLoader):
+ * Sample URL derivation for listen-before-install:
  * the hosted sample.mp3 sits next to the model file, and the fallback
  * is the rhasspy piper-samples speaker_0.mp3 for the same voice.
  */
@@ -55,8 +55,8 @@ class VoiceSampleUrlTest {
 
     @Test
     fun fallbackUsesCanonicalCodeForRegionalKeys() {
-        // Catalog code "en-gb-x-rp" canonicalizes to en_GB (iOS PR #69);
-        // the community path uses the canonical code, like iOS.
+        // Catalog code "en-gb-x-rp" canonicalizes to en_GB;
+        // the community path uses the canonical code.
         val rp = entry(
             key = "en_GB-alan-medium",
             name = "alan",

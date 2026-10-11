@@ -5,8 +5,8 @@ import dev.ihorshevchuk.piper.tts.VoiceInfo
 /**
  * Display titles for installed voices.
  *
- * Mirrors the iOS `modelTitle` (`"<dataset> <language>"`, e.g. "Lessac
- * English"); falls back to the raw voice key when there is no config.
+ * Title format is `"<dataset> <language>"` (e.g. "Lessac English");
+ * falls back to the raw voice key when there is no config.
  */
 object VoiceTitles {
 

@@ -12,7 +12,7 @@ class VoiceTitlesTest {
         VoiceInfo(name, locale, File("/tmp/$name.onnx"), null)
 
     @Test
-    fun `title uses dataset and language like ios`() {
+    fun `title uses dataset and language`() {
         val config = VoiceConfig(
             name = "lessac", languageCode = "en_US", languageName = "English",
             countryName = "United States", piperVersion = "1.0.0",

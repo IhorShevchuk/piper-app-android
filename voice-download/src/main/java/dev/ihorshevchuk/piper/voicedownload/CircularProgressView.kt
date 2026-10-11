@@ -9,14 +9,12 @@ import android.util.TypedValue
 import android.view.View
 
 /**
- * Circular download-progress indicator, 1:1 with the iOS
- * `CircularProgressView` (PiperApp/Sources/Utils/SharedViews): a faint
- * full-circle track with a round-capped progress arc starting at the top,
- * in the app accent color.
+ * Circular download-progress indicator: a faint full-circle track
+ * with a round-capped progress arc starting at the top, in the app
+ * accent color.
  *
- * TalkBack: the hosting row sets the content description (label + percent),
- * mirroring the iOS `.accessibilityLabel("downloading")` /
- * `.accessibilityValue("N%")`.
+ * TalkBack: the hosting row sets the content description
+ * (label + percent).
  */
 class CircularProgressView @JvmOverloads constructor(
     context: Context,
@@ -24,7 +22,7 @@ class CircularProgressView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
-    /** 0..1, like the iOS `progress: Double`. */
+    /** Progress, 0..1. */
     var progress: Float = 0f
         set(value) {
             field = value.coerceIn(0f, 1f)
@@ -55,7 +53,7 @@ class CircularProgressView @JvmOverloads constructor(
 
     init {
         updatePaint()
-        // 25dp default, like the iOS `size: 25`.
+        // 25dp default size.
         val size = (25f * resources.displayMetrics.density).toInt()
         minimumWidth = size
         minimumHeight = size
@@ -64,13 +62,13 @@ class CircularProgressView @JvmOverloads constructor(
     private fun updatePaint() {
         trackPaint.strokeWidth = lineWidth
         trackPaint.color = tint
-        trackPaint.alpha = 51 // 20% opacity, like iOS `tint.opacity(0.2)`
+        trackPaint.alpha = 51 // 20% opacity
         progressPaint.strokeWidth = lineWidth
         progressPaint.color = tint
     }
 
     companion object {
-        /** The theme accent, 1:1 with the iOS accent color (system blue). */
+        /** The theme accent (system blue). */
         private fun resolveAccent(context: Context): Int {
             val tv = TypedValue()
             return if (context.theme.resolveAttribute(android.R.attr.colorAccent, tv, true)) {

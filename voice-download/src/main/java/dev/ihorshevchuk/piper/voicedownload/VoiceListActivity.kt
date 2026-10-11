@@ -32,24 +32,24 @@ import java.util.Locale
  * Voice list screen, in two modes:
  *
  * - Language mode (launched with [EXTRA_LANGUAGE_CODE] from the unified
- *   main screen): the voices of ONE canonical language, mirroring the
- *   iOS LanguageVoicesView - the "not fully tested" warning ABOVE the
- *   voices and the "large files" warning BELOW (PR #77), "No voices
+ *   main screen): the voices of ONE canonical language - the
+ *   "not fully tested" warning ABOVE the voices and the "large files"
+ *   warning BELOW, "No voices
  *   available" when the language has none. The same screen serves the
  *   "Installed languages" rows and the "All Languages" rows.
  * - Browse mode (no extra; launched from the TTS engine settings via
  *   [VoiceListContract.ACTION_MANAGE_VOICES], as before): installed /
  *   available / all filter + search over the whole catalog.
  *
- * Rows mirror the iOS voice rows: download with a circular progress
- * ring that IS the cancel control (tap it to cancel, PR #71), delete,
+ * Rows: download with a circular progress
+ * ring that IS the cancel control (tap it to cancel), delete,
  * set-active, preview (installed voices synthesize the sample locally),
  * and Play sample on not-installed rows, which streams the hosted
- * sample.mp3 (community sample as fallback, as on iOS) so a voice can
+ * sample.mp3 (community sample as fallback) so a voice can
  * be heard before installing. A not-installed row's tap does nothing,
  * while an installed row's tap opens the voice detail in `:app` through
  * [VoiceListContract.ACTION_VOICE_DETAIL]), and a license line when
- * the catalog provides one (PR #62). Row sizes follow the Voice format
+ * the catalog provides one. Row sizes follow the Voice format
  * setting, read when the list binds.
  *
  * Accessibility: the status line is a polite live region; every button
@@ -86,7 +86,7 @@ class VoiceListActivity : Activity() {
     private var previewEngine: PiperEngine? = null
     private var previewThread: Thread? = null
 
-    // Streamed sample playback for not-installed voices (iOS parity).
+    // Streamed sample playback for not-installed voices.
     private var samplePlayer: MediaPlayer? = null
     private var sampleKey: String? = null
     private var sampleState: RowSampleState = RowSampleState.IDLE
@@ -297,8 +297,8 @@ class VoiceListActivity : Activity() {
         val empty = filtered.isEmpty() && allEntries.isNotEmpty()
         emptyView.visibility = if (empty) View.VISIBLE else View.GONE
         recycler.visibility = if (empty) View.GONE else View.VISIBLE
-        // Language mode: warnings frame the voices (iOS #77); with no
-        // voices the screen shows just the empty text, like iOS.
+        // Language mode: warnings frame the voices; with no voices
+        // the screen shows just the empty text.
         val warnings = if (code != null && filtered.isNotEmpty()) View.VISIBLE else View.GONE
         warningTopView.visibility = warnings
         warningBottomView.visibility = warnings
@@ -419,7 +419,7 @@ class VoiceListActivity : Activity() {
     }
 
     // ------------------------------------------------------------------
-    // Streamed samples for not-installed voices (iOS VoiceItemView)
+    // Streamed samples for not-installed voices
     // ------------------------------------------------------------------
 
     /** Play sample toggles: tapping the playing row's Stop ends it. */
@@ -477,7 +477,7 @@ class VoiceListActivity : Activity() {
     private fun onSampleError(entry: VoiceCatalogEntry, message: String) {
         if (sampleKey != entry.key) return
         // Our hosted sample may be missing; retry once with the community
-        // sample (iOS handleSampleFailure).
+        // sample.
         if (!sampleFallbackTried) {
             sampleFallbackTried = true
             releaseSamplePlayer()

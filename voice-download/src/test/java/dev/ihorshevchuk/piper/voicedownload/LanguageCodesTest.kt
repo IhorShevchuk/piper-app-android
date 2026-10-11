@@ -5,7 +5,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Tests for [LanguageCodes], ported from the iOS PR #69 cases. */
+/** Tests for [LanguageCodes]. */
 class LanguageCodesTest {
 
     @Test
@@ -59,8 +59,8 @@ class LanguageCodesTest {
 
     @Test
     fun `installed japanese code still resolves to its catalog language`() {
-        // Browsing hides ja, but resolution must keep working (iOS keeps
-        // the catalog entry for exactly this).
+        // Browsing hides ja, but resolution must keep working (the
+        // catalog entry is kept for exactly this).
         val catalog = setOf("ja_JP", "en_US")
         assertEquals("ja_JP", LanguageCodes.resolve("ja_JP", catalog))
         assertEquals("ja_JP", LanguageCodes.resolve("ja", catalog))

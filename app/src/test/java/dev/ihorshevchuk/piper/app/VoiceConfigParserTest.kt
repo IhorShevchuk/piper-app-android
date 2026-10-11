@@ -41,7 +41,7 @@ class VoiceConfigParserTest {
         assertEquals(22050, config.sampleRate)
         assertEquals(mapOf("lessac" to 0), config.speakers)
         assertEquals(1, config.numSpeakers)
-        // Single speaker with a map: the picker still offers it, like iOS.
+        // Single speaker with a map: the picker still offers it.
         assertEquals(mapOf("lessac" to 0), config.pickerSpeakers())
     }
 

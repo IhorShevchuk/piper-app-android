@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.RecyclerView
 /** Per-row download state for a voice the catalog knows about. */
 enum class RowDownloadState { IDLE, DOWNLOADING, FAILED }
 
-/** Streamed-sample state for a not-installed row (iOS play/stop button). */
+/** Streamed-sample state for a not-installed row (play/stop button). */
 enum class RowSampleState { IDLE, LOADING, PLAYING }
 
 /** One row in the voice list: catalog entry plus local state. */
@@ -161,7 +161,7 @@ class VoiceListAdapter(
                 formatSize(rowData.displaySizeBytes)
             )
             // License line under the size, when the catalog provides a
-            // headline license (iOS VoiceItemView, PR #62).
+            // headline license.
             val license = e.license
             if (!license.isNullOrEmpty()) {
                 licenseLine.text = context.getString(R.string.voice_license_line, license)
@@ -170,7 +170,7 @@ class VoiceListAdapter(
                 licenseLine.visibility = View.GONE
             }
             // Whole-row tap: the activity decides (installed -> detail,
-            // not installed -> nothing, as on iOS). Action buttons keep
+            // not installed -> nothing). Action buttons keep
             // their own clicks.
             isClickable = true
             isFocusable = true
@@ -199,9 +199,9 @@ class VoiceListAdapter(
                     ) { onDelete(e) })
                 }
                 rowData.downloadState == RowDownloadState.DOWNLOADING -> {
-                    // 1:1 with iOS: the circular progress indicator, not a
-                    // horizontal bar - and the ring IS the cancel control
-                    // (PR #71): tapping it cancels, its accessibility
+                    // The circular progress indicator, not a horizontal
+                    // bar - and the ring IS the cancel control: tapping
+                    // it cancels, its accessibility
                     // label is "Cancel download" and the percent is the
                     // accessibility value. A separate Cancel button stays
                     // next to it for discoverability.
@@ -251,8 +251,8 @@ class VoiceListAdapter(
                         R.string.voice_action_download,
                         context.getString(R.string.voice_cd_download, e.displayName)
                     ) { onDownload(e) })
-                    // Listen before installing (iOS VoiceItemView play
-                    // button): streams the hosted sample; while it loads
+                    // Listen before installing (play button): streams
+                    // the hosted sample; while it loads
                     // or plays, the button becomes Stop.
                     if (rowData.sampleState == RowSampleState.IDLE) {
                         actions.addView(actionButton(

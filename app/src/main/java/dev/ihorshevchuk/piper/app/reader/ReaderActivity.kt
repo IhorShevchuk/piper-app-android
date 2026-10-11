@@ -311,7 +311,7 @@ class ReaderActivity : ComponentActivity() {
         private const val SPEED_MIN = 25
         private const val SPEED_DEFAULT = 100
         private const val SPEED_MAX = 220
-        /** iOS accent #007AFF at ~20% over the text. */
+        /** Accent #007AFF at ~20% over the text. */
         private const val HIGHLIGHT_COLOR = 0x33007AFF
     }
 }

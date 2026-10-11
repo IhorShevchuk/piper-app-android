@@ -6,8 +6,8 @@ import org.junit.Test
 import java.util.Locale
 
 /**
- * The preview line must come from the same Samples.json the iOS app
- * uses, looked up by full locale code exactly like iOS does.
+ * The preview line must come from the bundled Samples.json, looked
+ * up by full locale code.
  */
 class PreviewSamplesTest {
 
@@ -29,7 +29,7 @@ class PreviewSamplesTest {
     }
 
     @Test
-    fun `no language-family fallback, mirroring iOS`() {
+    fun `no language-family fallback`() {
         val samples = mapOf("en_US" to "Hello.")
         assertEquals(
             "default",

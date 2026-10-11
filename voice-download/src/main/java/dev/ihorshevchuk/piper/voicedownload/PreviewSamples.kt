@@ -5,9 +5,9 @@ import org.json.JSONObject
 import java.util.Locale
 
 /**
- * Spoken preview line for a voice, read from the same `Samples.json` the
- * iOS app bundles (assets/samples.json), keyed by full locale code
- * ("en_US"). Exact-code lookup only, mirroring iOS; anything missing
+ * Spoken preview line for a voice, read from the bundled `Samples.json`
+ * (assets/samples.json), keyed by full locale code
+ * ("en_US"). Exact-code lookup only; anything missing
  * falls back to [R.string.preview_sample_default].
  */
 object PreviewSamples {

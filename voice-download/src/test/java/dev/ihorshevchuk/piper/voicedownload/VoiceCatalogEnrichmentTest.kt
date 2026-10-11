@@ -6,8 +6,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Catalog enrichment tests: per-voice licenses + training data (iOS
- * PR #62) and the INT8 `variants` field (iOS PR #76), including the
+ * Catalog enrichment tests: per-voice licenses + training data and
+ * the INT8 `variants` field, including the
  * effective download URL/size/MD5 under both voice formats.
  *
  * Fixture shape verified against the live

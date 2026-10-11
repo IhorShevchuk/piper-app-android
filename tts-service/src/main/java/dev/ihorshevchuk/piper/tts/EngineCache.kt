@@ -224,7 +224,7 @@ object EngineCacheHolder {
                 PiperEngine(
                     PiperCreateOptions(
                         modelPath = voice.modelFile.absolutePath,
-                        // null configPath -> native uses modelPath + ".json", like iOS.
+                        // null configPath -> native uses modelPath + ".json".
                         configPath = voice.configFile?.absolutePath,
                         espeakDataPath = espeakDir?.takeIf { it.isDirectory }?.absolutePath
                     ),

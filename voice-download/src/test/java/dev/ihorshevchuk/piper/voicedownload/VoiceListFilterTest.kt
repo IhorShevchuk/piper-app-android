@@ -95,7 +95,7 @@ class VoiceListFilterTest {
         assertEquals(3, out.size)
     }
 
-    // ---- Unified-list parity (iOS #66/#68): flat search, ja filter ----
+    // ---- Unified list: flat search, ja filter ----
 
     private val withJapanese = all + entry(
         "ja_JP-hi_fi_captain-medium", "Hi Fi Captain (medium)",

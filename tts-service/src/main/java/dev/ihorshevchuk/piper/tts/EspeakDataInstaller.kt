@@ -12,8 +12,8 @@ import java.io.File
  * build always produces): when the bundled version differs from the staged
  * one, the directory is re-staged into place, so data upgrades are picked
  * up instead of rotting behind a stage-once marker. Stage the data into
- * `app/src/main/assets/espeak-ng-data/` by compiling the vendored espeak-ng,
- * or reuse the iOS app's data directory - see the piper-kotlin README
+ * `app/src/main/assets/espeak-ng-data/` by compiling the vendored espeak-ng
+ * - see the piper-kotlin README
  * "espeak-ng-data packaging".
  *
  * Returns the staged directory, an already-present install, or null when

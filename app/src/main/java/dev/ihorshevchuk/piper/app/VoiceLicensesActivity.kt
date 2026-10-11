@@ -13,11 +13,11 @@ import dev.ihorshevchuk.piper.voicedownload.VoiceCatalogEntry
 import dev.ihorshevchuk.piper.voicedownload.VoiceDownloadManager
 
 /**
- * Voice Licenses screen, mirroring the iOS VoiceLicensesView (PR #62):
- * every catalog voice with its headline license, the model license and
- * the training-data license + source link when the catalog provides
- * them. Loads the catalog only when opened; a load failure shows the
- * same empty state as an empty catalog (iOS fails soft here too).
+ * Voice Licenses screen: every catalog voice with its headline
+ * license, the model license and the training-data license + source
+ * link when the catalog provides them. Loads the catalog only when
+ * opened; a load failure shows the same empty state as an empty
+ * catalog (fails soft).
  */
 class VoiceLicensesActivity : Activity() {
 
@@ -52,7 +52,7 @@ class VoiceLicensesActivity : Activity() {
                 Log.w(TAG, "catalog load for licenses failed", e)
                 emptyList()
             }
-            // iOS sorts the licenses list by name, then quality, then key.
+            // Sort by name, then quality, then key.
             val sorted = entries.sortedWith(
                 compareBy({ it.displayName }, { it.quality }, { it.key })
             )

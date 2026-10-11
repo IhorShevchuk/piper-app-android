@@ -8,12 +8,11 @@ enum class VoiceFilterMode { ALL, INSTALLED, AVAILABLE }
 /**
  * Pure filter + search over catalog entries.
  *
- * Matching is case- and diacritic-insensitive (iOS folds with
- * `.caseInsensitive, .diacriticInsensitive`), over the display name, both
+ * Matching is case- and diacritic-insensitive, over the display name, both
  * language names, country, language code/family and key.
  *
- * Japanese voices are excluded from browsing and search (iOS hides the
- * `ja` family there); they are NOT removed from the catalog, so an
+ * Japanese voices are excluded from browsing and search (the `ja`
+ * family is hidden there); they are NOT removed from the catalog, so an
  * installed Japanese voice still resolves to its language group.
  */
 object VoiceListFilter {
@@ -37,8 +36,8 @@ object VoiceListFilter {
     }
 
     /**
-     * Flat search across all languages for the unified main screen
-     * (iOS `MainHostModel.searchResults`): Japanese excluded, results
+     * Flat search across all languages for the unified main screen:
+     * Japanese excluded, results
      * sorted by language (English name) then voice name.
      */
     fun search(entries: List<VoiceCatalogEntry>, query: String): List<VoiceCatalogEntry> {
@@ -52,8 +51,7 @@ object VoiceListFilter {
 
     /**
      * Catalog languages visible for browsing: canonical codes, Japanese
-     * excluded, sorted by English language name (iOS sorts by the
-     * localized language name).
+     * excluded, sorted by English language name.
      */
     fun browsableLanguageCodes(entries: List<VoiceCatalogEntry>): List<String> {
         val byCode = LinkedHashMap<String, VoiceCatalogEntry>()
