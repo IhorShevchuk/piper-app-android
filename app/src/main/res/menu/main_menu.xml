@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Two toolbar icon buttons like iOS (help, then settings), always
+     shown - no overflow menu. -->
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/menu_help"
-        android:title="@string/menu_help" />
+        android:icon="@drawable/ic_toolbar_help"
+        android:title="@string/menu_help"
+        android:showAsAction="always" />
     <item
         android:id="@+id/menu_settings"
-        android:title="@string/menu_settings" />
+        android:icon="@drawable/ic_toolbar_settings"
+        android:title="@string/menu_settings"
+        android:showAsAction="always" />
 </menu>
