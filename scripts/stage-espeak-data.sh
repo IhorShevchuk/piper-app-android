@@ -11,12 +11,12 @@
 #
 # Usage:
 #   scripts/stage-espeak-data.sh [path-to-espeak-ng-source]
-# Default source: ../piper-android/third-party/espeak-ng (sibling repo).
+# Default source: ../piper-kotlin/third-party/espeak-ng (sibling repo).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-ESPEAK_SRC="${1:-$REPO_ROOT/../piper-android/third-party/espeak-ng}"
+ESPEAK_SRC="${1:-$REPO_ROOT/../piper-kotlin/third-party/espeak-ng}"
 DEST="$REPO_ROOT/app/src/main/assets/espeak-ng-data"
 
 if [ ! -f "$ESPEAK_SRC/CMakeLists.txt" ]; then

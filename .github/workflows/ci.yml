@@ -1,0 +1,115 @@
+name: CI
+
+# Mirrors the iOS/macOS piper-app Actions setup: pull requests and
+# main pushes build and test; main pushes additionally publish.
+# There is no Google Play account yet, so "publish" means a GitHub
+# Release carrying the debug APK (rolling tag `latest`) plus the APK
+# as a workflow artifact on every run. Once Play exists, the release
+# step is where the AAB upload will slot in.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Test and build APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout app
+        uses: actions/checkout@v4
+        with:
+          path: piper-app-android
+
+      # The app builds against the sibling piper-kotlin repo through a
+      # Gradle composite build (settings.gradle.kts), so check the
+      # library out next to it, at its main branch.
+      - name: Checkout piper-kotlin (sibling library)
+        uses: actions/checkout@v4
+        with:
+          repository: IhorShevchuk/piper-kotlin
+          ref: main
+          path: piper-kotlin
+          submodules: recursive
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+        with:
+          # The action's default list includes the legacy 'tools'
+          # package, which sdkmanager no longer offers (same fix as
+          # piper-kotlin PR #6).
+          packages: platform-tools
+
+      - name: Load NDK version
+        run: |
+          echo "NDK_VERSION=$(grep '^piper\.ndkVersion=' piper-kotlin/gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
+
+      - name: Cache NDK
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.ANDROID_HOME }}/ndk
+          key: ndk-${{ env.NDK_VERSION }}-${{ runner.os }}
+
+      - name: Install Android packages
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0" "ndk;${NDK_VERSION}" "cmake;3.22.1"
+
+      - name: Fetch native deps (ONNX Runtime, submodules)
+        working-directory: piper-kotlin
+        run: ./scripts/fetch-native-deps.sh
+
+      - name: Stage espeak-ng-data into app assets
+        working-directory: piper-app-android
+        run: ./scripts/stage-espeak-data.sh "$GITHUB_WORKSPACE/piper-kotlin/third-party/espeak-ng"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Unit tests
+        working-directory: piper-app-android
+        run: ./gradlew :app:testDebugUnitTest :tts-service:testDebugUnitTest :voice-download:testDebugUnitTest --stacktrace
+
+      - name: Build debug APK
+        working-directory: piper-app-android
+        run: ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Name the APK
+        id: apk
+        working-directory: piper-app-android
+        run: |
+          VERSION="$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)"
+          mkdir -p dist
+          cp app/build/outputs/apk/debug/app-debug.apk \
+            "dist/piper-android-${VERSION}-${GITHUB_SHA::7}.apk"
+          echo "file=piper-app-android/dist/piper-android-${VERSION}-${GITHUB_SHA::7}.apk" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: piper-android-${{ steps.apk.outputs.version }}-${{ github.sha }}
+          path: ${{ steps.apk.outputs.file }}
+          retention-days: 30
+
+      # Publish: no Play account yet, so main builds land on a rolling
+      # prerelease that always carries the newest main APK.
+      - name: Publish APK to the rolling release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Piper for Android - latest main build
+          prerelease: true
+          body: |
+            Debug APK built from main @ ${{ github.sha }} (run ${{ github.run_number }}).
+            Sideload it: download the .apk below and open it on the device.
+            This rolling release is replaced by every main build; it is
+            the stand-in for a Play listing until a Play account exists.
+          files: ${{ steps.apk.outputs.file }}
