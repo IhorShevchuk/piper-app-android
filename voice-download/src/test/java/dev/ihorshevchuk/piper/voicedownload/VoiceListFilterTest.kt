@@ -94,4 +94,71 @@ class VoiceListFilterTest {
         val out = VoiceListFilter.filter(all, installed, VoiceFilterMode.ALL, "   ")
         assertEquals(3, out.size)
     }
+
+    // ---- Unified-list parity (iOS #66/#68): flat search, ja filter ----
+
+    private val withJapanese = all + entry(
+        "ja_JP-hi_fi_captain-medium", "Hi Fi Captain (medium)",
+        languageEnglish = "Japanese", languageNative = "日本語",
+        countryEnglish = "Japan", languageCode = "ja_JP"
+    )
+
+    @Test
+    fun `search is flat across languages and shows language via the entry`() {
+        val out = VoiceListFilter.search(withJapanese, "medium")
+        // All non-Japanese voices match "(medium)" in the name; the
+        // Japanese one is excluded even though it matches too.
+        assertEquals(3, out.size)
+        assertEquals(
+            setOf("English", "Ukrainian"),
+            out.map { it.languageEnglish }.toSet()
+        )
+    }
+
+    @Test
+    fun `search excludes japanese but catalog resolution still finds it`() {
+        assertEquals(0, VoiceListFilter.search(withJapanese, "japanese").size)
+        assertEquals(0, VoiceListFilter.search(withJapanese, "hi fi").size)
+        // The entry itself is not deleted: its language group resolves.
+        val codes = withJapanese.map { it.canonicalLanguageCode }.toSet()
+        assertEquals("ja_JP", LanguageCodes.resolve("ja_JP", codes))
+        assertEquals(
+            listOf("ja_JP-hi_fi_captain-medium"),
+            VoiceListFilter.voicesForLanguage(withJapanese, "ja_JP").map { it.key }
+        )
+    }
+
+    @Test
+    fun `browsable languages exclude japanese and use canonical codes`() {
+        val codes = VoiceListFilter.browsableLanguageCodes(withJapanese)
+        assertEquals(listOf("en_GB", "en_US", "uk_UA"), codes.sorted())
+        assertEquals(3, codes.size)
+    }
+
+    @Test
+    fun `search is diacritic insensitive in both directions`() {
+        val diacritic = listOf(entry(
+            "pl_PL-zary-medium", "Żary (medium)",
+            languageEnglish = "Polish", languageNative = "Polski",
+            countryEnglish = "Poland", languageCode = "pl_PL"
+        ))
+        assertEquals(1, VoiceListFilter.search(diacritic, "zary").size)
+        assertEquals(1, VoiceListFilter.search(diacritic, "ŻARY").size)
+        assertEquals(1, VoiceListFilter.search(diacritic, "polski").size)
+    }
+
+    @Test
+    fun `search sorts by language then name`() {
+        val out = VoiceListFilter.search(all, "united")
+        assertEquals(
+            listOf("en_GB-alan-medium", "en_US-lessac-medium"),
+            out.map { it.key }
+        )
+    }
+
+    @Test
+    fun `voices for language returns that language only in catalog order`() {
+        val out = VoiceListFilter.voicesForLanguage(all, "en_GB")
+        assertEquals(listOf("en_GB-alan-medium"), out.map { it.key })
+    }
 }

@@ -67,6 +67,27 @@ object VoiceCatalogParser {
         // No model file (e.g. a MODEL_CARD-only entry): not downloadable.
         val model = onnxPath ?: return null
 
+        // Catalog enrichment (licenses + INT8 variant), all optional:
+        // entries written before it was added parse exactly as before.
+        val trainingData = obj.optJSONObject("training_data")?.let { td ->
+            TrainingData(
+                url = td.optString("url").takeIf { it.isNotEmpty() },
+                license = td.optString("license").takeIf { it.isNotEmpty() },
+                licenseRaw = td.optString("license_raw").takeIf { it.isNotEmpty() }
+            )
+        }
+        val int8Variant = obj.optJSONObject("variants")
+            ?.optJSONObject("int8")
+            ?.let { variant ->
+                val path = variant.optString("model").takeIf { it.isNotEmpty() }
+                    ?: return@let null
+                VoiceVariant(
+                    modelPath = path,
+                    modelUrl = source.filesBaseUrl + path,
+                    sizeBytes = variant.optLong("size_bytes", 0)
+                )
+            }
+
         return VoiceCatalogEntry(
             key = key,
             displayName = obj.optString("name", key).ifEmpty { key },
@@ -81,7 +102,11 @@ object VoiceCatalogParser {
             onnxSizeBytes = onnxSize,
             onnxMd5 = onnxMd5,
             configSizeBytes = configSize,
-            configMd5 = configMd5
+            configMd5 = configMd5,
+            license = obj.optString("license").takeIf { it.isNotEmpty() },
+            modelLicense = obj.optString("model_license").takeIf { it.isNotEmpty() },
+            trainingData = trainingData,
+            int8Variant = int8Variant
         )
     }
 }

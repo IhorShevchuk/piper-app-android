@@ -2,6 +2,8 @@ package dev.ihorshevchuk.piper.voicedownload
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -20,18 +22,35 @@ import dev.ihorshevchuk.piper.engine.PiperEngine
 import dev.ihorshevchuk.piper.player.PiperPlayer
 import dev.ihorshevchuk.piper.tts.EspeakDataInstaller
 import dev.ihorshevchuk.piper.tts.FileVoiceStore
+import dev.ihorshevchuk.piper.tts.VoiceListContract
 import dev.ihorshevchuk.piper.tts.VoicePrefs
 import java.io.File
+import java.util.Locale
 
 /**
- * Voice browser: installed / available / all filter, search, per-voice
- * download with progress, delete, set-active and preview.
+ * Voice list screen, in two modes:
  *
- * Launched from the TTS engine settings via
- * [dev.ihorshevchuk.piper.tts.VoiceListContract.ACTION_MANAGE_VOICES].
+ * - Language mode (launched with [EXTRA_LANGUAGE_CODE] from the unified
+ *   main screen): the voices of ONE canonical language, mirroring the
+ *   iOS LanguageVoicesView - the "not fully tested" warning ABOVE the
+ *   voices and the "large files" warning BELOW (PR #77), "No voices
+ *   available" when the language has none. The same screen serves the
+ *   "Installed languages" rows and the "All Languages" rows.
+ * - Browse mode (no extra; launched from the TTS engine settings via
+ *   [VoiceListContract.ACTION_MANAGE_VOICES], as before): installed /
+ *   available / all filter + search over the whole catalog.
+ *
+ * Rows mirror the iOS voice rows: download with a circular progress
+ * ring that IS the cancel control (tap it to cancel, PR #71), delete,
+ * set-active, preview (installed voices synthesize the sample locally;
+ * a not-installed row is action-only - its tap does nothing, while an
+ * installed row's tap opens the voice detail in `:app` through
+ * [VoiceListContract.ACTION_VOICE_DETAIL]), and a license line when
+ * the catalog provides one (PR #62). Row sizes follow the Voice format
+ * setting, read when the list binds.
  *
  * Accessibility: the status line is a polite live region; every button
- * names its voice in its content description; download progress bars expose
+ * names its voice in its content description; download progress exposes
  * "Downloading <voice>, <n> percent" on focus; terminal states (done,
  * failed, deleted, active changed, preview errors) are announced.
  *
@@ -42,6 +61,8 @@ class VoiceListActivity : Activity() {
     private lateinit var root: LinearLayout
     private lateinit var statusView: TextView
     private lateinit var emptyView: TextView
+    private lateinit var warningTopView: TextView
+    private lateinit var warningBottomView: TextView
     private lateinit var recycler: RecyclerView
     private lateinit var adapter: VoiceListAdapter
 
@@ -50,6 +71,8 @@ class VoiceListActivity : Activity() {
     private lateinit var voicesDir: File
     private val player = PiperPlayer()
 
+    /** Canonical language code in language mode; null in browse mode. */
+    private var languageCode: String? = null
     private var allEntries: List<VoiceCatalogEntry> = emptyList()
     private var installedKeys: Set<String> = emptySet()
     private var filterMode: VoiceFilterMode = VoiceFilterMode.ALL
@@ -63,6 +86,9 @@ class VoiceListActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        languageCode = intent.getStringExtra(EXTRA_LANGUAGE_CODE)
+            ?.let { LanguageCodes.canonical(it) }
+
         voicesDir = File(filesDir, FileVoiceStore.VOICES_DIR_NAME).apply { mkdirs() }
         prefs = VoicePrefs(this)
         manager = VoiceDownloadManager(this)
@@ -70,6 +96,17 @@ class VoiceListActivity : Activity() {
         buildLayout()
         setContentView(root)
         loadCatalog(forceRefresh = false)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Returning from Settings (or a detail screen) can change the
+        // Voice format and the installed set: rebind so sizes and row
+        // states follow.
+        if (::adapter.isInitialized && allEntries.isNotEmpty()) {
+            installedKeys = manager.installedKeys()
+            applyFilter()
+        }
     }
 
     override fun onDestroy() {
@@ -89,14 +126,63 @@ class VoiceListActivity : Activity() {
         }
 
         val title = TextView(this).apply {
-            text = getString(R.string.voice_list_title)
+            text = languageCode?.let { languageTitle(it) }
+                ?: getString(R.string.voice_list_title)
             textSize = 20f
         }
+        this.title = title.text
         statusView = TextView(this).apply {
             textSize = 14f
             accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
         }
+        warningTopView = warningView(R.string.warning_not_tested_voices)
+        warningBottomView = warningView(R.string.warning_big_voice_files)
 
+        adapter = VoiceListAdapter(
+            onDownload = ::startDownload,
+            onCancel = ::cancelDownload,
+            onRetry = ::startDownload,
+            onDelete = ::confirmDelete,
+            onPreview = ::preview,
+            onSetActive = ::setActive,
+            onRowClick = ::openRow
+        )
+        recycler = RecyclerView(this).apply {
+            layoutManager = LinearLayoutManager(this@VoiceListActivity)
+            adapter = this@VoiceListActivity.adapter
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
+            )
+        }
+        emptyView = TextView(this).apply {
+            text = getString(
+                if (languageCode != null) R.string.no_voices_available
+                else R.string.voice_list_empty
+            )
+            textSize = 16f
+            visibility = View.GONE
+        }
+
+        root.addView(title)
+        root.addView(statusView)
+        if (languageCode == null) {
+            root.addView(filterRow())
+            root.addView(searchField())
+        }
+        root.addView(warningTopView)
+        root.addView(recycler)
+        root.addView(warningBottomView)
+        root.addView(emptyView)
+    }
+
+    private fun warningView(textRes: Int): TextView = TextView(this).apply {
+        text = getString(textRes)
+        textSize = 14f
+        setPadding(0, dp(8), 0, dp(8))
+        visibility = View.GONE
+    }
+
+    private fun filterRow(): RadioGroup {
         val filters = RadioGroup(this).apply {
             orientation = LinearLayout.HORIZONTAL
         }
@@ -115,46 +201,19 @@ class VoiceListActivity : Activity() {
             }
             applyFilter()
         }
+        return filters
+    }
 
-        val search = EditText(this).apply {
-            hint = getString(R.string.voice_search_hint)
-            addTextChangedListener(object : TextWatcher {
-                override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) = Unit
-                override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) = Unit
-                override fun afterTextChanged(s: Editable?) {
-                    query = s?.toString() ?: ""
-                    applyFilter()
-                }
-            })
-        }
-
-        adapter = VoiceListAdapter(
-            onDownload = ::startDownload,
-            onCancel = ::cancelDownload,
-            onRetry = ::startDownload,
-            onDelete = ::confirmDelete,
-            onPreview = ::preview,
-            onSetActive = ::setActive
-        )
-        recycler = RecyclerView(this).apply {
-            layoutManager = LinearLayoutManager(this@VoiceListActivity)
-            adapter = this@VoiceListActivity.adapter
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
-            )
-        }
-        emptyView = TextView(this).apply {
-            text = getString(R.string.voice_list_empty)
-            textSize = 16f
-            visibility = View.GONE
-        }
-
-        root.addView(title)
-        root.addView(statusView)
-        root.addView(filters)
-        root.addView(search)
-        root.addView(recycler)
-        root.addView(emptyView)
+    private fun searchField(): EditText = EditText(this).apply {
+        hint = getString(R.string.voice_search_hint)
+        addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) = Unit
+            override fun afterTextChanged(s: Editable?) {
+                query = s?.toString() ?: ""
+                applyFilter()
+            }
+        })
     }
 
     private fun filterButton(id: Int, textRes: Int): RadioButton =
@@ -162,6 +221,13 @@ class VoiceListActivity : Activity() {
             this.id = id
             text = getString(textRes)
         }
+
+    private fun languageTitle(code: String): String {
+        val family = LanguageCodes.family(code)
+        val region = code.substringAfter('_', "")
+        val locale = if (region.isNotEmpty()) Locale(family, region) else Locale(family)
+        return locale.getDisplayName(Locale.getDefault()).ifEmpty { code }
+    }
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 
@@ -193,14 +259,23 @@ class VoiceListActivity : Activity() {
     }
 
     private fun applyFilter() {
+        val code = languageCode
+        val filtered = if (code != null) {
+            VoiceListFilter.voicesForLanguage(allEntries, code)
+        } else {
+            VoiceListFilter.filter(allEntries, installedKeys, filterMode, query)
+        }
         val active = prefs.activeVoiceName
-        val filtered = VoiceListFilter.filter(allEntries, installedKeys, filterMode, query)
+        // Sizes follow the Voice format setting (read at bind time, so a
+        // change in Settings shows as soon as the user returns here).
+        val format = VoiceFormatStore(this).current
         adapter.submitList(filtered.map { entry ->
             val overlay = rowState[entry.key]
             VoiceRow(
                 entry = entry,
                 isInstalled = entry.key in installedKeys,
                 isActive = entry.key == active,
+                displaySizeBytes = entry.effectiveTotalSizeBytes(format),
                 downloadState = overlay?.state ?: RowDownloadState.IDLE,
                 progressPercent = overlay?.percent ?: 0,
                 errorMessage = overlay?.error
@@ -209,12 +284,34 @@ class VoiceListActivity : Activity() {
         val empty = filtered.isEmpty() && allEntries.isNotEmpty()
         emptyView.visibility = if (empty) View.VISIBLE else View.GONE
         recycler.visibility = if (empty) View.GONE else View.VISIBLE
-        statusView.text = getString(
-            R.string.voice_list_status,
-            allEntries.size,
-            allEntries.map { it.languageEnglish }.distinct().size,
-            installedKeys.size
-        )
+        // Language mode: warnings frame the voices (iOS #77); with no
+        // voices the screen shows just the empty text, like iOS.
+        val warnings = if (code != null && filtered.isNotEmpty()) View.VISIBLE else View.GONE
+        warningTopView.visibility = warnings
+        warningBottomView.visibility = warnings
+        statusView.text = if (code != null) {
+            ""
+        } else {
+            getString(
+                R.string.voice_list_status,
+                allEntries.size,
+                allEntries.map { it.languageEnglish }.distinct().size,
+                installedKeys.size
+            )
+        }
+    }
+
+    /** Installed rows open the voice detail; other rows are action-only. */
+    private fun openRow(entry: VoiceCatalogEntry) {
+        if (entry.key !in installedKeys) return
+        try {
+            startActivity(
+                Intent(VoiceListContract.ACTION_VOICE_DETAIL)
+                    .putExtra(VoiceListContract.EXTRA_VOICE_NAME, entry.key)
+            )
+        } catch (e: ActivityNotFoundException) {
+            Log.w(TAG, "voice detail screen not available", e)
+        }
     }
 
     // ------------------------------------------------------------------
@@ -388,6 +485,8 @@ class VoiceListActivity : Activity() {
     )
 
     companion object {
+        /** Canonical language code for language mode (see class doc). */
+        const val EXTRA_LANGUAGE_CODE = "language_code"
         private const val TAG = "VoiceListActivity"
     }
 }

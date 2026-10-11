@@ -59,6 +59,22 @@
     <string name="voice_size_mb">%1$.1f MB</string>
     <string name="voice_size_unknown">size unknown</string>
 
+    <!-- Per-language voices screen (iOS LanguageVoicesView, PR #77):
+         warnings above and below the voice list -->
+    <string name="warning_not_tested_voices">These voices are community-uploaded and may not be fully tested. Some files may be incomplete or behave unexpectedly. Download and install at your own risk.</string>
+    <string name="warning_big_voice_files">Note: Voice files can be large. To avoid extra charges, download using Wi-Fi or an unlimited data plan.</string>
+    <string name="no_voices_available">No voices available</string>
+    <!-- Label of the progress-ring cancel control (iOS VoiceItemView) -->
+    <string name="cancel_download">Cancel download</string>
+
+    <!-- Per-voice licenses (iOS PR #62) -->
+    <!-- %1$s = license name -->
+    <string name="voice_license_line">License: %1$s</string>
+    <string name="voice_license">License</string>
+    <string name="model_license">Model License</string>
+    <string name="training_data">Training Data</string>
+    <string name="license_unknown">Unknown</string>
+
     <!-- Fallback spoken preview line. Heard, not shown. Per-voice lines come
          from assets/samples.json (same file the iOS app uses). -->
     <string name="preview_sample_default">Hello. This is a preview of this voice.</string>
