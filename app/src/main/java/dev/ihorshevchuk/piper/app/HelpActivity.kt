@@ -11,7 +11,7 @@ import android.widget.TextView
 import android.widget.Toast
 
 /**
- * Help screen, mirroring the iOS HelpView: the five help lines, with the
+ * Help screen, mirroring the iOS HelpView: the seven help lines, with the
  * VoiceOver-specific ones adapted to the Android TTS settings flow, plus a
  * button that opens the system TTS settings directly.
  */
@@ -27,8 +27,13 @@ class HelpActivity : Activity() {
             setPadding(pad, pad, pad, pad)
         }
 
+        // iOS HelpView order: install (1), search/cancel (7), Compact
+        // format (6), then the system-TTS lines (2-3, Android-adapted),
+        // search (4), and custom voices in Settings (5).
         val lines = listOf(
             R.string.help_line_1,
+            R.string.help_line_7,
+            R.string.help_line_6,
             R.string.help_line_2,
             R.string.help_line_3,
             R.string.help_line_4,
@@ -40,7 +45,8 @@ class HelpActivity : Activity() {
                 textSize = 16f
                 setPadding(0, 0, 0, dp(12))
             })
-            if (index == 2) {
+            if (index == 4) {
+                // After the two Android TTS-settings lines (2 and 3).
                 root.addView(Button(this).apply {
                     text = getString(R.string.open_tts_settings)
                     setOnClickListener { openTtsSettings() }

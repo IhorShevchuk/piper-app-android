@@ -11,14 +11,20 @@ import androidx.recyclerview.widget.RecyclerView
 /** Per-row download state for a voice the catalog knows about. */
 enum class RowDownloadState { IDLE, DOWNLOADING, FAILED }
 
+/** Streamed-sample state for a not-installed row (iOS play/stop button). */
+enum class RowSampleState { IDLE, LOADING, PLAYING }
+
 /** One row in the voice list: catalog entry plus local state. */
 data class VoiceRow(
     val entry: VoiceCatalogEntry,
     val isInstalled: Boolean,
     val isActive: Boolean,
+    /** Size shown on the row: the entry's size under the current Voice format. */
+    val displaySizeBytes: Long = entry.totalSizeBytes,
     val downloadState: RowDownloadState = RowDownloadState.IDLE,
     val progressPercent: Int = 0,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val sampleState: RowSampleState = RowSampleState.IDLE
 )
 
 /**
@@ -33,7 +39,9 @@ class VoiceListAdapter(
     private val onRetry: (VoiceCatalogEntry) -> Unit,
     private val onDelete: (VoiceCatalogEntry) -> Unit,
     private val onPreview: (VoiceCatalogEntry) -> Unit,
-    private val onSetActive: (VoiceCatalogEntry) -> Unit
+    private val onSetActive: (VoiceCatalogEntry) -> Unit,
+    private val onSampleClick: (VoiceCatalogEntry) -> Unit = {},
+    private val onRowClick: (VoiceCatalogEntry) -> Unit = {}
 ) : RecyclerView.Adapter<VoiceListAdapter.ViewHolder>() {
 
     private var rows: List<VoiceRow> = emptyList()
@@ -56,7 +64,8 @@ class VoiceListAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder =
         ViewHolder(
             parent,
-            onDownload, onCancel, onRetry, onDelete, onPreview, onSetActive
+            onDownload, onCancel, onRetry, onDelete, onPreview, onSetActive,
+            onSampleClick, onRowClick
         )
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -70,13 +79,18 @@ class VoiceListAdapter(
         private val onRetry: (VoiceCatalogEntry) -> Unit,
         private val onDelete: (VoiceCatalogEntry) -> Unit,
         private val onPreview: (VoiceCatalogEntry) -> Unit,
-        private val onSetActive: (VoiceCatalogEntry) -> Unit
+        private val onSetActive: (VoiceCatalogEntry) -> Unit,
+        private val onSampleClick: (VoiceCatalogEntry) -> Unit,
+        private val onRowClick: (VoiceCatalogEntry) -> Unit
     ) : RecyclerView.ViewHolder(RowView(parent)) {
 
         private val row = itemView as RowView
 
         fun bind(rowData: VoiceRow) {
-            row.bind(rowData, onDownload, onCancel, onRetry, onDelete, onPreview, onSetActive)
+            row.bind(
+                rowData, onDownload, onCancel, onRetry, onDelete,
+                onPreview, onSetActive, onSampleClick, onRowClick
+            )
         }
     }
 
@@ -89,6 +103,7 @@ class VoiceListAdapter(
         private val title: TextView
         private val activeBadge: TextView
         private val subtitle: TextView
+        private val licenseLine: TextView
         private val actions: LinearLayout
 
         init {
@@ -111,12 +126,17 @@ class VoiceListAdapter(
             titleRow.addView(activeBadge)
 
             subtitle = TextView(context).apply { textSize = 14f }
+            licenseLine = TextView(context).apply {
+                textSize = 12f
+                visibility = View.GONE
+            }
             actions = LinearLayout(context).apply {
                 orientation = HORIZONTAL
             }
 
             addView(titleRow)
             addView(subtitle)
+            addView(licenseLine)
             addView(actions)
         }
 
@@ -127,7 +147,9 @@ class VoiceListAdapter(
             onRetry: (VoiceCatalogEntry) -> Unit,
             onDelete: (VoiceCatalogEntry) -> Unit,
             onPreview: (VoiceCatalogEntry) -> Unit,
-            onSetActive: (VoiceCatalogEntry) -> Unit
+            onSetActive: (VoiceCatalogEntry) -> Unit,
+            onSampleClick: (VoiceCatalogEntry) -> Unit,
+            onRowClick: (VoiceCatalogEntry) -> Unit
         ) {
             val e = rowData.entry
             title.text = e.displayName
@@ -136,8 +158,23 @@ class VoiceListAdapter(
                 e.languageEnglish.ifEmpty { e.languageCode },
                 e.countryEnglish.ifEmpty { "–" },
                 e.quality,
-                formatSize(e.totalSizeBytes)
+                formatSize(rowData.displaySizeBytes)
             )
+            // License line under the size, when the catalog provides a
+            // headline license (iOS VoiceItemView, PR #62).
+            val license = e.license
+            if (!license.isNullOrEmpty()) {
+                licenseLine.text = context.getString(R.string.voice_license_line, license)
+                licenseLine.visibility = View.VISIBLE
+            } else {
+                licenseLine.visibility = View.GONE
+            }
+            // Whole-row tap: the activity decides (installed -> detail,
+            // not installed -> nothing, as on iOS). Action buttons keep
+            // their own clicks.
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { onRowClick(e) }
             activeBadge.visibility = if (rowData.isActive) View.VISIBLE else View.GONE
             if (rowData.isActive) {
                 activeBadge.text = context.getString(R.string.voice_badge_active)
@@ -163,13 +200,22 @@ class VoiceListAdapter(
                 }
                 rowData.downloadState == RowDownloadState.DOWNLOADING -> {
                     // 1:1 with iOS: the circular progress indicator, not a
-                    // horizontal bar.
+                    // horizontal bar - and the ring IS the cancel control
+                    // (PR #71): tapping it cancels, its accessibility
+                    // label is "Cancel download" and the percent is the
+                    // accessibility value. A separate Cancel button stays
+                    // next to it for discoverability.
                     val dial = CircularProgressView(context).apply {
                         progress = rowData.progressPercent / 100f
                         contentDescription = context.getString(
+                            R.string.cancel_download
+                        ) + ": " + context.getString(
                             R.string.voice_cd_downloading,
                             e.displayName, rowData.progressPercent
                         )
+                        isClickable = true
+                        isFocusable = true
+                        setOnClickListener { onCancel(e) }
                         layoutParams = LayoutParams(dp(40), dp(40)).apply {
                             gravity = android.view.Gravity.CENTER_VERTICAL
                         }
@@ -205,6 +251,20 @@ class VoiceListAdapter(
                         R.string.voice_action_download,
                         context.getString(R.string.voice_cd_download, e.displayName)
                     ) { onDownload(e) })
+                    // Listen before installing (iOS VoiceItemView play
+                    // button): streams the hosted sample; while it loads
+                    // or plays, the button becomes Stop.
+                    if (rowData.sampleState == RowSampleState.IDLE) {
+                        actions.addView(actionButton(
+                            R.string.voice_action_play_sample,
+                            context.getString(R.string.voice_cd_play_sample, e.displayName)
+                        ) { onSampleClick(e) })
+                    } else {
+                        actions.addView(actionButton(
+                            R.string.voice_action_stop_sample,
+                            context.getString(R.string.voice_cd_stop_sample, e.displayName)
+                        ) { onSampleClick(e) })
+                    }
                 }
             }
         }
