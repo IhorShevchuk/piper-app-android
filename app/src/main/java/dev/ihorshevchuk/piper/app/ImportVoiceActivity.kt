@@ -16,9 +16,9 @@ import dev.ihorshevchuk.piper.tts.FileVoiceStore
 import java.io.File
 
 /**
- * Import a voice from files, mirroring the iOS ImportVoiceView: pick the
- * `.onnx` model and its `.onnx.json` configuration independently, then
- * install. The JSON is validated by parsing it, like iOS `ModelInfo.create`.
+ * Import a voice from files: pick the `.onnx` model and its
+ * `.onnx.json` configuration independently, then install. The JSON is
+ * validated by parsing it before anything is installed.
  */
 class ImportVoiceActivity : ComponentActivity() {
 
@@ -53,7 +53,7 @@ class ImportVoiceActivity : ComponentActivity() {
                 showError(getString(R.string.import_invalid_config))
                 return@registerForActivityResult
             }
-            // Validate the config the way iOS validates ModelInfo.
+            // Validate the config by parsing it.
             val valid = try {
                 contentResolver.openInputStream(uri)?.use { input ->
                     VoiceConfigParser.parseJson(input.bufferedReader().readText())

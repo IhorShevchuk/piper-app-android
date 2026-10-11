@@ -28,12 +28,11 @@ import dev.ihorshevchuk.piper.voicedownload.VoiceDownloadManager
 import java.io.File
 
 /**
- * Installed-voice detail, mirroring the iOS VoiceView: voice information,
- * sample playback, WAV export, speaker picker for multi-speaker voices,
- * and removal with confirmation.
+ * Installed-voice detail: voice information, sample playback, WAV
+ * export, speaker picker for multi-speaker voices, and removal with
+ * confirmation.
  *
- * Android addition: "Set as Active Voice", which drives the system TTS
- * service (iOS picks the voice from the VoiceOver rotor instead).
+ * "Set as Active Voice" drives the system TTS service.
  */
 class VoiceDetailActivity : Activity() {
 
@@ -92,8 +91,7 @@ class VoiceDetailActivity : Activity() {
             return
         }
         voice = found
-        // The config is optional: without it the info section is skipped,
-        // exactly like iOS when ModelInfo is nil.
+        // The config is optional: without it the info section is skipped.
         config = voice.configFile?.let(VoiceConfigParser::parse)
         prefs = VoicePrefs(this)
         manager = VoiceDownloadManager(this)
@@ -131,7 +129,7 @@ class VoiceDetailActivity : Activity() {
     }
 
     // ------------------------------------------------------------------
-    // Voice information (iOS ModelInfoView, detailed)
+    // Voice information (detailed)
     // ------------------------------------------------------------------
 
     private fun addInfoSection(root: LinearLayout) {
@@ -163,7 +161,7 @@ class VoiceDetailActivity : Activity() {
     }
 
     // ------------------------------------------------------------------
-    // Per-voice license rows (iOS PR #62, VoiceView follow-up)
+    // Per-voice license rows
     // ------------------------------------------------------------------
 
     /**
@@ -207,7 +205,7 @@ class VoiceDetailActivity : Activity() {
     }
 
     // ------------------------------------------------------------------
-    // Sample playback + export (iOS playSampleView)
+    // Sample playback + export
     // ------------------------------------------------------------------
 
     private fun addSampleSection(root: LinearLayout) {
@@ -404,7 +402,7 @@ class VoiceDetailActivity : Activity() {
     }
 
     // ------------------------------------------------------------------
-    // Active voice (Android TTS service; iOS uses the VoiceOver rotor)
+    // Active voice (Android TTS service)
     // ------------------------------------------------------------------
 
     private fun addActiveSection(root: LinearLayout) {
@@ -434,7 +432,7 @@ class VoiceDetailActivity : Activity() {
     }
 
     // ------------------------------------------------------------------
-    // Remove (iOS uninstall)
+    // Remove
     // ------------------------------------------------------------------
 
     private fun addRemoveSection(root: LinearLayout) {

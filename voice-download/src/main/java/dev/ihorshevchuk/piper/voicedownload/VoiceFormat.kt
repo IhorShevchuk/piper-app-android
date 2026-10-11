@@ -4,9 +4,7 @@ import android.content.Context
 
 /**
  * The voice model format used for new downloads, chosen in Settings and
- * persisted in SharedPreferences. Android twin of the iOS `ModelFormat`
- * (`PiperApp/Sources/Utils/ModelFormat.swift`): same preference key, same
- * raw values, same default.
+ * persisted in SharedPreferences.
  *
  * Downloads read the current format when they start; installed voices
  * keep the format they were downloaded with.
@@ -35,7 +33,7 @@ class VoiceFormatStore(context: Context) {
 
     companion object {
         private const val PREFS_NAME = "piper_voice_format"
-        /** Same key the iOS app uses in UserDefaults. */
+        /** SharedPreferences key for the format. */
         const val KEY_MODEL_FORMAT = "model_format"
     }
 }

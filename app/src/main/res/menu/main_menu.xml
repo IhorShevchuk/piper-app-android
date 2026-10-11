@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Two toolbar icon buttons like iOS (help, then settings), always
+<!-- Two toolbar icon buttons (help, then settings), always
      shown - no overflow menu. -->
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item

@@ -21,15 +21,13 @@ import dev.ihorshevchuk.piper.voicedownload.VoiceFormat
 import dev.ihorshevchuk.piper.voicedownload.VoiceFormatStore
 
 /**
- * Settings screen, mirroring the iOS SettingsView (PR #73/#75/#79 -
- * the old About screen renamed): the Voice format picker on TOP, then
- * Import Model from Files, then the content the About screen had
- * (Credits & Legal, engine status, app version, feedback), plus the
- * Voice Licenses entry (iOS PR #62).
+ * Settings screen (it replaces the old About screen): the Voice
+ * format picker on TOP, then Import Model from Files, then Credits &
+ * Legal, engine status, app version and feedback, plus the Voice
+ * Licenses entry.
  *
- * The iOS "Audio Unit Status / Connect" row becomes the Android TTS
- * engine status: whether Piper is the system's selected TTS engine,
- * with a button to the system TTS settings when it is not.
+ * The engine status row shows whether Piper is the system's selected
+ * TTS engine, with a button to the system TTS settings when it is not.
  */
 class SettingsActivity : Activity() {
 
@@ -97,7 +95,7 @@ class SettingsActivity : Activity() {
     }
 
     /**
-     * Voice format section (iOS SettingsView's first section): a
+     * Voice format section (the first section): a
      * dropdown with Standard (FP16) / Compact (INT8), persisted
      * immediately, and the footer explaining it applies to new
      * downloads only. Voice lists read the format when they bind, so
@@ -142,7 +140,7 @@ class SettingsActivity : Activity() {
         })
     }
 
-    /** Import Model from Files lives in Settings now (iOS PR #79). */
+    /** Import Model from Files lives in Settings. */
     private fun addImportSection(root: LinearLayout) {
         root.addView(Button(this).apply {
             text = getString(R.string.update_model_in_app)

@@ -6,7 +6,7 @@ import java.util.Locale
 /**
  * A Piper voice available to the TTS service: `<name>.onnx` plus its
  * optional `<name>.onnx.json` config (null configPath means the native
- * layer uses modelPath + ".json", matching iOS).
+ * layer uses modelPath + ".json").
  */
 data class VoiceInfo(
     val name: String,

@@ -7,12 +7,12 @@ import java.util.Locale
 /**
  * Parses a Piper voice `.onnx.json` configuration file.
  *
- * Android twin of the iOS `ModelInfo` decoder: dataset name, language,
+ * Decodes the fields the app needs: dataset name, language,
  * piper version, audio quality / sample rate, and the speaker map used by
- * the voice detail screen (mirrors iOS `VoiceView`'s speaker picker).
+ * the voice detail screen's speaker picker.
  */
 data class VoiceConfig(
-    /** Dataset name, e.g. "lessac". Falls back to "Unknown" like iOS. */
+    /** Dataset name, e.g. "lessac". Falls back to "Unknown" when absent. */
     val name: String,
     /** BCP-47-ish code from the config, e.g. "en_US". */
     val languageCode: String,
@@ -59,7 +59,7 @@ object VoiceConfigParser {
 
     /**
      * Returns null for malformed JSON or configs missing the sections the
-     * voice detail screen needs (mirrors the strictness of iOS `ModelInfo`).
+     * voice detail screen needs (strict: partial configs are rejected).
      */
     fun parseJson(json: String): VoiceConfig? {
         val root = try {

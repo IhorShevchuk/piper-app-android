@@ -113,7 +113,7 @@ class PiperTtsService : TextToSpeechService() {
                 return
             }
 
-            // iOS-parity speed: the 17-point curve + 2.2x sibilant clamp,
+            // Speed mapping: the 17-point curve + 2.2x sibilant clamp,
             // never the naive 1/rate.
             val lengthScale = SpeedCurve.lengthScaleForAndroidSpeechRate(request.speechRate)
 
@@ -139,7 +139,7 @@ class PiperTtsService : TextToSpeechService() {
                 val chunkLimit = callback.maxBufferSize.takeIf { it > 0 } ?: 8192
                 var streaming = true
                 // PiperEngine.synthesize splits into sentences internally
-                // (piper-utils SentenceSplitter, ported from piper-objc) and
+                // (piper-utils SentenceSplitter) and
                 // skips a failed sentence instead of aborting the utterance.
                 eng.synthesize(text, options, onSamples = { samples ->
                     if (!streaming || stopRequested.get() || !callback.hasStarted()) return@synthesize
@@ -223,7 +223,7 @@ class PiperTtsService : TextToSpeechService() {
             }
             val options = PiperCreateOptions(
                 modelPath = voice.modelFile.absolutePath,
-                // null configPath -> native uses modelPath + ".json", like iOS.
+                // null configPath -> native uses modelPath + ".json".
                 configPath = voice.configFile?.absolutePath,
                 espeakDataPath = espeakDataDir?.takeIf { it.isDirectory }?.absolutePath
             )

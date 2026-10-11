@@ -1,8 +1,7 @@
 package dev.ihorshevchuk.piper.voicedownload
 
 /**
- * Canonical language codes, ported from the iOS `MainHostModel`
- * (`canonicalLanguageCode` / `resolvedLanguageCode`).
+ * Canonical language codes (`canonical` / `resolve`).
  *
  * Model configs do not always use the catalog's language code: community
  * configs ship codes like "en-gb-x-rp" where the catalog says "en_GB".
@@ -28,7 +27,7 @@ object LanguageCodes {
     fun family(code: String): String =
         canonical(code).substringBefore('_').lowercase()
 
-    /** Japanese is hidden from catalog browsing/search (iOS parity). */
+    /** Japanese is hidden from catalog browsing/search. */
     fun isJapanese(code: String): Boolean = family(code) == "ja"
 
     /**

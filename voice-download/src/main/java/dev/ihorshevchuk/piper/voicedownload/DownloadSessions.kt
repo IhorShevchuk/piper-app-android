@@ -4,9 +4,8 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Session-scoped download registry, ported from the iOS `VoiceLoader`
- * fix in PR #72 ("scope download state to a session so cancel + restart
- * cannot corrupt it").
+ * Session-scoped download registry: download state is scoped to a
+ * session so cancel + restart cannot corrupt it.
  *
  * The bug it prevents: when all per-download state is keyed by voice key
  * alone, a cancelled download and its immediate replacement share that

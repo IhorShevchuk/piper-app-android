@@ -7,8 +7,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Tests for [DownloadSessions]: the iOS PR #72 guarantee that a cancelled
- * download and its replacement cannot corrupt each other.
+ * Tests for [DownloadSessions]: a cancelled download and its
+ * replacement cannot corrupt each other.
  */
 class DownloadSessionsTest {
 

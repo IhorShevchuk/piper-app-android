@@ -1,7 +1,7 @@
 name: CI
 
-# Mirrors the iOS/macOS piper-app Actions setup: pull requests and
-# main pushes build and test; main pushes additionally publish.
+# Pull requests and main pushes build and test; main pushes
+# additionally publish.
 # There is no Google Play account yet, so "publish" means a GitHub
 # Release carrying the debug APK (rolling tag `latest`) plus the APK
 # as a workflow artifact on every run. Once Play exists, the release

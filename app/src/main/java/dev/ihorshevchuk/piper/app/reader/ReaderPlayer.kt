@@ -24,8 +24,8 @@ import java.util.concurrent.atomic.AtomicReference
  * float32 byte offsets into the utterance, and [WordTracker] maps the
  * AudioTrack playback head to the word being spoken.
  *
- * Highlight callbacks fire on the main thread. Audio setup mirrors
- * PiperPlayer (16-bit mono stream, speech usage).
+ * Highlight callbacks fire on the main thread. Audio setup follows the
+ * engine player's configuration (16-bit mono stream, speech usage).
  */
 class ReaderPlayer {
 
