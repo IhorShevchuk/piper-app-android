@@ -9,23 +9,19 @@ import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
 import android.view.View
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ScrollView
-import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
-import dev.ihorshevchuk.piper.voicedownload.VoiceFormat
-import dev.ihorshevchuk.piper.voicedownload.VoiceFormatStore
 
 /**
  * Settings screen, mirroring the iOS SettingsView (PR #73/#75/#79 -
- * the old About screen renamed): the Voice format picker on TOP, then
- * Import Model from Files, then the content the About screen had
- * (Credits & Legal, engine status, app version, feedback), plus the
- * Voice Licenses entry (iOS PR #62).
+ * the old About screen renamed): Import Model from Files on top, then
+ * the content the About screen had (Credits & Legal, engine status, app
+ * version, feedback), plus the Voice Licenses entry (iOS PR #62).
+ * Unlike iOS there is no Voice format picker: INT8 is skipped on
+ * Android for now (see VoiceFormat in :voice-download).
  *
  * The iOS "Audio Unit Status / Connect" row becomes the Android TTS
  * engine status: whether Piper is the system's selected TTS engine,
@@ -43,7 +39,6 @@ class SettingsActivity : Activity() {
             setPadding(pad, pad, pad, pad)
         }
 
-        addVoiceFormatSection(root)
         addImportSection(root)
 
         root.addView(TextView(this).apply {
@@ -94,52 +89,6 @@ class SettingsActivity : Activity() {
         })
 
         setContentView(ScrollView(this).apply { addView(root) })
-    }
-
-    /**
-     * Voice format section (iOS SettingsView's first section): a
-     * dropdown with Standard (FP16) / Compact (INT8), persisted
-     * immediately, and the footer explaining it applies to new
-     * downloads only. Voice lists read the format when they bind, so
-     * sizes follow the new setting as soon as the user returns to them.
-     */
-    private fun addVoiceFormatSection(root: LinearLayout) {
-        val store = VoiceFormatStore(this)
-        root.addView(TextView(this).apply {
-            text = getString(R.string.voice_format)
-            setTypeface(typeface, Typeface.BOLD)
-            textSize = 18f
-            setPadding(0, 0, 0, dp(8))
-        })
-        val formats = listOf(VoiceFormat.STANDARD, VoiceFormat.COMPACT)
-        val labels = listOf(
-            getString(R.string.voice_format_standard),
-            getString(R.string.voice_format_compact)
-        )
-        val spinner = Spinner(this).apply {
-            adapter = ArrayAdapter(this@SettingsActivity,
-                android.R.layout.simple_spinner_item, labels).apply {
-                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            }
-            setSelection(formats.indexOf(store.current))
-            contentDescription = getString(R.string.voice_format)
-            onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(
-                    parent: AdapterView<*>?, view: View?,
-                    position: Int, id: Long
-                ) {
-                    store.current = formats[position]
-                }
-
-                override fun onNothingSelected(parent: AdapterView<*>?) = Unit
-            }
-        }
-        root.addView(spinner)
-        root.addView(TextView(this).apply {
-            text = getString(R.string.voice_format_description)
-            textSize = 14f
-            setPadding(0, dp(4), 0, 0)
-        })
     }
 
     /** Import Model from Files lives in Settings now (iOS PR #79). */
