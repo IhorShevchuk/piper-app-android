@@ -87,9 +87,9 @@ class VoiceDownloadManager(
     fun isDownloading(key: String): Boolean = sessions.isDownloading(key)
 
     /**
-     * Starts downloading [entry]'s model + config in the current format
-     * ([VoiceFormatStore.current], read once at start; installed voices
-     * keep their format). The model is always stored
+     * Starts downloading [entry]'s model + config in the format chosen
+     * in Settings ([VoiceFormatStore.current], read once at start;
+     * installed voices keep their format). The model is always stored
      * under the fixed name `<key>.onnx`, whichever build was fetched
      * (same as iOS). Returns false (and calls nothing) when the voice
      * is already installed or already downloading.

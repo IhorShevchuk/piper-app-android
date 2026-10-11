@@ -33,6 +33,7 @@ class HelpActivity : Activity() {
         val lines = listOf(
             R.string.help_line_1,
             R.string.help_line_7,
+            R.string.help_line_6,
             R.string.help_line_2,
             R.string.help_line_3,
             R.string.help_line_4,
