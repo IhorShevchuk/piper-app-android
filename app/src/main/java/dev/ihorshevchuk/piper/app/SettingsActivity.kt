@@ -213,7 +213,7 @@ class SettingsActivity : Activity() {
                 "https://github.com/espeak-ng/espeak-ng-spm"),
             Triple(R.string.license_app_title,
                 R.string.license_app_description,
-                "https://github.com/IhorShevchuk/piper-app-android"),
+                "https://github.com/piper-tts-apps/piper-app-android"),
         )
     }
 }

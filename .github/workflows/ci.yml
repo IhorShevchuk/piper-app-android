@@ -32,7 +32,7 @@ jobs:
       - name: Checkout piper-kotlin (sibling library)
         uses: actions/checkout@v4
         with:
-          repository: IhorShevchuk/piper-kotlin
+          repository: piper-tts-apps/piper-kotlin
           ref: main
           path: piper-kotlin
           submodules: recursive

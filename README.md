@@ -6,10 +6,10 @@
   Piper for Android<br>
   Experience high-quality <b>offline neural text-to-speech</b> directly on your device.<br><br>
   No Google Play listing yet - grab the latest build from the
-  <a href="https://github.com/IhorShevchuk/piper-app-android/releases/tag/latest">GitHub Releases page</a> 🚀
+  <a href="https://github.com/piper-tts-apps/piper-app-android/releases/tag/latest">GitHub Releases page</a> 🚀
 </h3>
 
-[![CI](https://github.com/IhorShevchuk/piper-app-android/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/IhorShevchuk/piper-app-android/actions/workflows/ci.yml)
+[![CI](https://github.com/piper-tts-apps/piper-app-android/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/piper-tts-apps/piper-app-android/actions/workflows/ci.yml)
 
 # 📥 Cloning & Building Piper
 
@@ -25,13 +25,13 @@
 
 ## Getting the Sources
 
-The app builds against the [piper-kotlin](https://github.com/IhorShevchuk/piper-kotlin)
+The app builds against the [piper-kotlin](https://github.com/piper-tts-apps/piper-kotlin)
 engine library through a Gradle composite build, so check out both repos
 side by side:
 
 ```bash
-git clone https://github.com/IhorShevchuk/piper-app-android.git
-git clone --recurse-submodules https://github.com/IhorShevchuk/piper-kotlin.git
+git clone https://github.com/piper-tts-apps/piper-app-android.git
+git clone --recurse-submodules https://github.com/piper-tts-apps/piper-kotlin.git
 ```
 
 The layout must be:
