@@ -1,4 +1,4 @@
-package dev.ihorshevchuk.piper.app
+package dev.ihorshevchuk.piper
 
 /**
  * Pure logic for the "import voice from file" flow.

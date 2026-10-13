@@ -1,4 +1,4 @@
-package dev.ihorshevchuk.piper.app
+package dev.ihorshevchuk.piper
 
 import org.json.JSONObject
 import java.io.File

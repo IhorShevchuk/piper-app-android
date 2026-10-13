@@ -23,7 +23,7 @@
             <!-- Launched from :voice-download rows via the
                  VoiceListContract.ACTION_VOICE_DETAIL intent action. -->
             <intent-filter>
-                <action android:name="dev.ihorshevchuk.piper.app.action.VOICE_DETAIL" />
+                <action android:name="dev.ihorshevchuk.piper.action.VOICE_DETAIL" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>

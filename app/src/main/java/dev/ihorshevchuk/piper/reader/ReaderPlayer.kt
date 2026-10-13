@@ -1,4 +1,4 @@
-package dev.ihorshevchuk.piper.app.reader
+package dev.ihorshevchuk.piper.reader
 
 import android.media.AudioAttributes
 import android.media.AudioFormat

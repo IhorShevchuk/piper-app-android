@@ -1,4 +1,4 @@
-package dev.ihorshevchuk.piper.app.reader
+package dev.ihorshevchuk.piper.reader
 
 import android.graphics.Typeface
 import android.os.Bundle
@@ -16,7 +16,7 @@ import android.widget.SeekBar
 import android.widget.Spinner
 import android.widget.TextView
 import androidx.activity.ComponentActivity
-import dev.ihorshevchuk.piper.app.R
+import dev.ihorshevchuk.piper.R
 import dev.ihorshevchuk.piper.tts.EngineCacheHolder
 import dev.ihorshevchuk.piper.tts.FileVoiceStore
 import dev.ihorshevchuk.piper.tts.VoiceInfo

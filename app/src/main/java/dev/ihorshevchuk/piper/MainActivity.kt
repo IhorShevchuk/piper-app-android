@@ -1,4 +1,4 @@
-package dev.ihorshevchuk.piper.app
+package dev.ihorshevchuk.piper
 
 import android.content.Intent
 import android.graphics.Typeface
@@ -192,7 +192,7 @@ class MainActivity : ComponentActivity() {
             text = getString(R.string.read_text_button)
             setOnClickListener {
                 startActivity(Intent(this@MainActivity,
-                    dev.ihorshevchuk.piper.app.reader.ReaderActivity::class.java))
+                    dev.ihorshevchuk.piper.reader.ReaderActivity::class.java))
             }
             setPadding(0, dp(16), 0, 0)
         })

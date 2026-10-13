@@ -1,4 +1,4 @@
-package dev.ihorshevchuk.piper.app
+package dev.ihorshevchuk.piper
 
 import android.app.Application
 import android.util.Log

@@ -1,4 +1,4 @@
-package dev.ihorshevchuk.piper.app
+package dev.ihorshevchuk.piper
 
 import dev.ihorshevchuk.piper.tts.VoiceInfo
 
