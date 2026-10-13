@@ -17,6 +17,6 @@ package dev.ihorshevchuk.piper.tts
 object VoiceListContract {
     const val ACTION_MANAGE_VOICES = "dev.ihorshevchuk.piper.tts.action.MANAGE_VOICES"
 
-    const val ACTION_VOICE_DETAIL = "dev.ihorshevchuk.piper.app.action.VOICE_DETAIL"
-    const val EXTRA_VOICE_NAME = "dev.ihorshevchuk.piper.app.extra.VOICE_NAME"
+    const val ACTION_VOICE_DETAIL = "dev.ihorshevchuk.piper.action.VOICE_DETAIL"
+    const val EXTRA_VOICE_NAME = "dev.ihorshevchuk.piper.extra.VOICE_NAME"
 }

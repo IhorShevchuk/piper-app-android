@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "dev.ihorshevchuk.piper.app"
+    namespace = "dev.ihorshevchuk.piper"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "dev.ihorshevchuk.piper.app"
+        applicationId = "dev.ihorshevchuk.piper"
         minSdk = 26
         targetSdk = 35
         versionCode = 1

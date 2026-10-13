@@ -1,4 +1,4 @@
-package dev.ihorshevchuk.piper.app
+package dev.ihorshevchuk.piper
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull

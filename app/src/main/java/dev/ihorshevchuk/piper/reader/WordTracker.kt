@@ -1,4 +1,4 @@
-package dev.ihorshevchuk.piper.app.reader
+package dev.ihorshevchuk.piper.reader
 
 import dev.ihorshevchuk.piper.utils.MarkerRange
 import dev.ihorshevchuk.piper.utils.SpeechMarker
